@@ -1,8 +1,8 @@
 
 services:
-  oracle1:
+  oracle:
     image: gvenzl/oracle-free:slim-faststart
-    container_name: oracle-db1
+    container_name: oracle-db
     ports:
       - "1521:1521"
     environment:
@@ -13,62 +13,64 @@ services:
         limits:
           memory: 3g
 
-  oracle2:
-    image: gvenzl/oracle-free:slim-faststart
-    container_name: oracle-db2
+  mysql:
+    image: mysql:8.0
+    container_name: mysql-db
     ports:
-      - "1522:1521"  # Different host port to avoid conflict
+      - "3306:3306"
     environment:
-      ORACLE_PASSWORD: demo123
-    shm_size: 2g
+      MYSQL_ROOT_PASSWORD: demo123
     deploy:
       resources:
         limits:
-          memory: 3g
+          memory: 1g
 
-  oracledb_exporter1:
+  oracledb_exporter:
     image: ghcr.io/iamseth/oracledb_exporter:latest
-    container_name: oracle_exporter1
+    container_name: oracle_exporter
     environment:
-      DATA_SOURCE_NAME: oracle://system:demo123@oracle-db1:1521/FREE
+      DATA_SOURCE_NAME: oracle://system:demo123@oracle-db:1521/FREE
     ports:
       - "9161:9161"
     depends_on:
-      - oracle1
+      - oracle
 
-  oracledb_exporter2:
-    image: ghcr.io/iamseth/oracledb_exporter:latest
-    container_name: oracle_exporter2
+  mysqld_exporter:
+    image: prom/mysqld-exporter:latest
+    container_name: mysqld_exporter
     environment:
-      DATA_SOURCE_NAME: oracle://system:demo123@oracle-db2:1521/FREE
+      - MYSQLD_EXPORTER_PASSWORD=demo123
     ports:
-      - "9162:9161"
+      - "9104:9104"
+    command:
+      - "--mysqld.address=mysql-db:3306"
+      - "--mysqld.username=root"
     depends_on:
-      - oracle2
+      - mysql
 
-  node_exporter_db1:
+  node_exporter_oracle:
     image: prom/node-exporter:latest
-    container_name: node_exporter_db1
-    network_mode: "service:oracle1"  # Shares network/pid with oracle1 for accurate host metrics
-    pid: "service:oracle1"
+    container_name: node_exporter_oracle
+    network_mode: "service:oracle"  # Shares network/pid with oracle for accurate host metrics
+    pid: "service:oracle"
     volumes:
       - /:/host:ro,rslave
     command:
       - '--path.rootfs=/host'
     depends_on:
-      - oracle1
+      - oracle
 
-  node_exporter_db2:
+  node_exporter_mysql:
     image: prom/node-exporter:latest
-    container_name: node_exporter_db2
-    network_mode: "service:oracle2"
-    pid: "service:oracle2"
+    container_name: node_exporter_mysql
+    network_mode: "service:mysql"
+    pid: "service:mysql"
     volumes:
       - /:/host:ro,rslave
     command:
       - '--path.rootfs=/host'
     depends_on:
-      - oracle2
+      - mysql
 
   prometheus:
     image: prom/prometheus:latest
