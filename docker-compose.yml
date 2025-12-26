@@ -30,7 +30,7 @@ services:
     image: ghcr.io/iamseth/oracledb_exporter:latest
     container_name: oracle_exporter1
     environment:
-      DATA_SOURCE_NAME: system/demo123@oracle-db1:1521/FREE
+      DATA_SOURCE_NAME: oracle://system:demo123@oracle-db1:1521/FREE
     ports:
       - "9161:9161"
     depends_on:
@@ -40,7 +40,7 @@ services:
     image: ghcr.io/iamseth/oracledb_exporter:latest
     container_name: oracle_exporter2
     environment:
-      DATA_SOURCE_NAME: system/demo123@oracle-db2:1521/FREE
+      DATA_SOURCE_NAME: oracle://system:demo123@oracle-db2:1521/FREE
     ports:
       - "9162:9161"
     depends_on:
