@@ -1,0 +1,94 @@
+version: '3.8'
+
+services:
+  oracle1:
+    image: gvenzl/oracle-free:slim-faststart
+    container_name: oracle-db1
+    ports:
+      - "1521:1521"
+    environment:
+      ORACLE_PASSWORD: demo123
+    shm_size: 2g
+    deploy:
+      resources:
+        limits:
+          memory: 3g
+
+  oracle2:
+    image: gvenzl/oracle-free:slim-faststart
+    container_name: oracle-db2
+    ports:
+      - "1522:1521"  # Different host port to avoid conflict
+    environment:
+      ORACLE_PASSWORD: demo123
+    shm_size: 2g
+    deploy:
+      resources:
+        limits:
+          memory: 3g
+
+  oracledb_exporter1:
+    image: ghcr.io/iamseth/oracledb_exporter:latest
+    container_name: oracle_exporter1
+    environment:
+      DATA_SOURCE_NAME: system/demo123@oracle-db1:1521/FREE
+    ports:
+      - "9161:9161"
+    depends_on:
+      - oracle1
+
+  oracledb_exporter2:
+    image: ghcr.io/iamseth/oracledb_exporter:latest
+    container_name: oracle_exporter2
+    environment:
+      DATA_SOURCE_NAME: system/demo123@oracle-db2:1521/FREE
+    ports:
+      - "9162:9161"
+    depends_on:
+      - oracle2
+
+  node_exporter_db1:
+    image: prom/node_exporter:latest
+    container_name: node_exporter_db1
+    network_mode: "service:oracle1"  # Shares network/pid with oracle1 for accurate host metrics
+    pid: "service:oracle1"
+    volumes:
+      - /:/host:ro,rslave
+    command:
+      - '--path.rootfs=/host'
+    depends_on:
+      - oracle1
+
+  node_exporter_db2:
+    image: prom/node_exporter:latest
+    container_name: node_exporter_db2
+    network_mode: "service:oracle2"
+    pid: "service:oracle2"
+    volumes:
+      - /:/host:ro,rslave
+    command:
+      - '--path.rootfs=/host'
+    depends_on:
+      - oracle2
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: alertmanager
+    ports:
+      - "9093:9093"
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
