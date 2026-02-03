@@ -226,7 +226,7 @@ curl -H "Content-Type: application/json" -d '[{
     "summary": "Test alert",
     "description": "Testing the system"
   }
-}]' http://localhost:9093/api/v1/alerts
+}]' http://localhost:9093/api/v2/alerts
 ```
 
 **Check MySQL connections:**

@@ -172,7 +172,7 @@ scenario_6() {
         "summary": "This is a test critical alert",
         "description": "Testing critical alert routing to oracle-team receiver"
       }
-    }]' http://localhost:9093/api/v1/alerts > /dev/null
+    }]' http://localhost:9093/api/v2/alerts > /dev/null
     echo "   ✓ Critical alert sent"
     echo "   - Check Mailpit: http://localhost:8025"
     echo "   - Should route to: oracle-team receiver"
@@ -192,7 +192,7 @@ scenario_6() {
         "summary": "This is a test warning alert",
         "description": "Testing warning alert routing to mysql-team receiver"
       }
-    }]' http://localhost:9093/api/v1/alerts > /dev/null
+    }]' http://localhost:9093/api/v2/alerts > /dev/null
     echo "   ✓ Warning alert sent"
     echo "   - Check Mailpit: http://localhost:8025"
     echo "   - Should route to: mysql-team receiver"
@@ -219,7 +219,7 @@ scenario_7() {
             \"summary\": \"Grouped alert instance $i\",
             \"description\": \"This alert should be grouped with others\"
           }
-        }]" http://localhost:9093/api/v1/alerts > /dev/null
+        }]" http://localhost:9093/api/v2/alerts > /dev/null
         echo "   Sent alert $i/5..."
         sleep 1
     done
