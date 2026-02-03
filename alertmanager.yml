@@ -1,0 +1,159 @@
+global:
+  resolve_timeout: 5m
+  smtp_smarthost: 'mailpit:1025'
+  smtp_from: 'alertmanager@example.com'
+  smtp_require_tls: false
+
+# Route tree - routes alerts based on labels
+route:
+  # Group alerts by service and severity to reduce noise
+  group_by: ['service', 'severity', 'alertname']
+  
+  # Wait 30s before sending first alert in a group (allows grouping)
+  group_wait: 30s
+  
+  # Wait 5m before sending updated alert group
+  group_interval: 5m
+  
+  # Repeat interval varies by severity (alert fatigue prevention)
+  repeat_interval: 1h
+  
+  # Default receiver
+  receiver: 'default-email'
+  
+  # Child routes for different scenarios
+  routes:
+    # Critical alerts - immediate notification, shorter repeat
+    - match:
+        severity: critical
+      receiver: 'critical-alerts'
+      group_wait: 10s
+      group_interval: 2m
+      repeat_interval: 30m
+      continue: true  # Continue to check other routes
+    
+    # Warning alerts - longer intervals to prevent fatigue
+    - match:
+        severity: warning
+      receiver: 'warning-alerts'
+      group_wait: 1m
+      group_interval: 10m
+      repeat_interval: 4h
+      continue: true
+    
+    # Database-specific alerts
+    - match:
+        service: oracle
+      receiver: 'oracle-team'
+      group_by: ['alertname', 'instance']
+      continue: true
+    
+    - match:
+        service: mysql
+      receiver: 'mysql-team'
+      group_by: ['alertname', 'instance']
+      continue: true
+    
+    # Infrastructure alerts
+    - match:
+        service: infrastructure
+      receiver: 'infrastructure-team'
+      continue: true
+
+# Inhibition rules - suppress lower severity when critical exists
+inhibit_rules:
+  # Suppress warning when critical exists for same service
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['service', 'instance']
+  
+  # Suppress elevated alerts when high alerts exist
+  - source_match:
+      alertname: 'HighCPUUsage'
+    target_match:
+      alertname: 'ElevatedCPUUsage'
+    equal: ['instance']
+  
+  - source_match:
+      alertname: 'HighMemoryUsage'
+    target_match:
+      alertname: 'ElevatedMemoryUsage'
+    equal: ['instance']
+  
+  - source_match:
+      alertname: 'OracleHighActiveSessions'
+    target_match:
+      alertname: 'OracleElevatedActiveSessions'
+    equal: ['instance']
+  
+  - source_match:
+      alertname: 'MySQLHighConnections'
+    target_match:
+      alertname: 'MySQLElevatedConnections'
+    equal: ['instance']
+
+# Receivers - different notification channels
+receivers:
+  - name: 'default-email'
+    email_configs:
+      - to: 'admin@example.com'
+        send_resolved: true
+        headers:
+          Subject: '[Monitoring] Alert: {{ .GroupLabels.alertname }}'
+  
+  - name: 'critical-alerts'
+    email_configs:
+      - to: 'dba-oncall@example.com'
+        send_resolved: true
+        headers:
+          Subject: '[CRITICAL] {{ .GroupLabels.alertname }} - {{ .GroupLabels.service }}'
+        html: |
+          <h2>Critical Alert</h2>
+          <p><strong>Alert:</strong> {{ .GroupLabels.alertname }}</p>
+          <p><strong>Service:</strong> {{ .GroupLabels.service }}</p>
+          <p><strong>Severity:</strong> CRITICAL</p>
+          <hr>
+          {{ range .Alerts }}
+          <h3>{{ .Annotations.summary }}</h3>
+          <p>{{ .Annotations.description }}</p>
+          <p><strong>Started:</strong> {{ .StartsAt }}</p>
+          {{ end }}
+  
+  - name: 'warning-alerts'
+    email_configs:
+      - to: 'dba-team@example.com'
+        send_resolved: true
+        headers:
+          Subject: '[WARNING] {{ .GroupLabels.alertname }} - {{ .GroupLabels.service }}'
+        html: |
+          <h2>Warning Alert</h2>
+          <p><strong>Alert:</strong> {{ .GroupLabels.alertname }}</p>
+          <p><strong>Service:</strong> {{ .GroupLabels.service }}</p>
+          <hr>
+          {{ range .Alerts }}
+          <h3>{{ .Annotations.summary }}</h3>
+          <p>{{ .Annotations.description }}</p>
+          {{ end }}
+  
+  - name: 'oracle-team'
+    email_configs:
+      - to: 'oracle-dba@example.com'
+        send_resolved: true
+        headers:
+          Subject: '[Oracle] {{ .GroupLabels.alertname }}'
+  
+  - name: 'mysql-team'
+    email_configs:
+      - to: 'mysql-dba@example.com'
+        send_resolved: true
+        headers:
+          Subject: '[MySQL] {{ .GroupLabels.alertname }}'
+  
+  - name: 'infrastructure-team'
+    email_configs:
+      - to: 'infra-team@example.com'
+        send_resolved: true
+        headers:
+          Subject: '[Infrastructure] {{ .GroupLabels.alertname }}'

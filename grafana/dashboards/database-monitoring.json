@@ -1,0 +1,1874 @@
+{
+    "annotations": {
+        "list": [
+            {
+                "builtIn": 1,
+                "datasource": {
+                    "type": "grafana",
+                    "uid": "-- Grafana --"
+                },
+                "enable": true,
+                "hide": true,
+                "iconColor": "rgba(0, 211, 255, 1)",
+                "name": "Annotations & Alerts",
+                "type": "dashboard"
+            }
+        ]
+    },
+    "description": "Proactive On-Premise Database Monitoring Dashboard for Oracle & MySQL",
+    "editable": true,
+    "fiscalYearStartMonth": 0,
+    "graphTooltip": 1,
+    "id": null,
+    "links": [],
+    "liveNow": false,
+    "panels": [
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 0
+            },
+            "id": 1,
+            "panels": [],
+            "title": "🚦 Traffic Light Health Check (Heads-up Display)",
+            "type": "row"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "${DS_PROMETHEUS}"
+            },
+            "description": "Database instance availability status. Green = UP, Red = DOWN",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "mappings": [
+                        {
+                            "options": {
+                                "0": {
+                                    "color": "red",
+                                    "index": 1,
+                                    "text": "DOWN"
+                                },
+                                "1": {
+                                    "color": "green",
+                                    "index": 0,
+                                    "text": "UP"
+                                }
+                            },
+                            "type": "value"
+                        }
+                    ],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "red",
+                                "value": null
+                            },
+                            {
+                                "color": "green",
+                                "value": 1
+                            }
+                        ]
+                    },
+                    "unit": "none"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 5,
+                "w": 6,
+                "x": 0,
+                "y": 1
+            },
+            "id": 2,
+            "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "textMode": "auto"
+            },
+            "pluginVersion": "10.0.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "${DS_PROMETHEUS}"
+                    },
+                    "editorMode": "code",
+                    "expr": "up{instance=~\"$instance.*\"}",
+                    "legendFormat": "{{job}} - {{instance}}",
+                    "range": true,
+                    "refId": "A"
+                }
+            ],
+            "title": "Instance Status",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "${DS_PROMETHEUS}"
+            },
+            "description": "Replication lag in seconds. Warning > 30s, Critical > 5m",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "orange",
+                                "value": 30
+                            },
+                            {
+                                "color": "red",
+                                "value": 300
+                            }
+                        ]
+                    },
+                    "unit": "s"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 5,
+                "w": 6,
+                "x": 6,
+                "y": 1
+            },
+            "id": 3,
+            "options": {
+                "colorMode": "background",
+                "graphMode": "area",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "textMode": "auto"
+            },
+            "pluginVersion": "10.0.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "${DS_PROMETHEUS}"
+                    },
+                    "editorMode": "code",
+                    "expr": "# MySQL Replication Lag\nmysql_slave_status_seconds_behind_master{instance=~\"$instance.*\"}\nor\n# Oracle Data Guard Lag (if available)\noracledb_dataguard_lag_seconds{instance=~\"$instance.*\"}\nor\n# Fallback: Return 0 if no replication configured\nvector(0)",
+                    "legendFormat": "Replication Lag",
+                    "range": true,
+                    "refId": "A"
+                }
+            ],
+            "title": "Replication Lag",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "${DS_PROMETHEUS}"
+            },
+            "description": "Time since last successful backup. Critical if > 24 hours",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "orange",
+                                "value": 72000
+                            },
+                            {
+                                "color": "red",
+                                "value": 86400
+                            }
+                        ]
+                    },
+                    "unit": "s"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 5,
+                "w": 6,
+                "x": 12,
+                "y": 1
+            },
+            "id": 4,
+            "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "textMode": "auto"
+            },
+            "pluginVersion": "10.0.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "${DS_PROMETHEUS}"
+                    },
+                    "editorMode": "code",
+                    "expr": "# Time since last backup (requires custom metric or RMAN exporter)\ntime() - (oracledb_backup_last_successful_timestamp{instance=~\"$instance.*\"} or mysql_backup_last_successful_timestamp{instance=~\"$instance.*\"} or vector(0))",
+                    "legendFormat": "Hours Since Backup",
+                    "range": true,
+                    "refId": "A"
+                }
+            ],
+            "title": "Backup Freshness",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "${DS_PROMETHEUS}"
+            },
+            "description": "Predictive: Days until disk is 100% full based on 24h growth rate. Warning < 14 days, Critical < 3 days",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "mappings": [
+                        {
+                            "options": {
+                                "from": -1e+308,
+                                "result": {
+                                    "color": "green",
+                                    "index": 0,
+                                    "text": "Stable/Shrinking"
+                                },
+                                "to": 0
+                            },
+                            "type": "range"
+                        }
+                    ],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "red",
+                                "value": null
+                            },
+                            {
+                                "color": "orange",
+                                "value": 3
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 14
+                            },
+                            {
+                                "color": "green",
+                                "value": 30
+                            }
+                        ]
+                    },
+                    "unit": "d"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 5,
+                "w": 6,
+                "x": 18,
+                "y": 1
+            },
+            "id": 5,
+            "options": {
+                "colorMode": "background",
+                "graphMode": "area",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "textMode": "auto"
+            },
+            "pluginVersion": "10.0.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "${DS_PROMETHEUS}"
+                    },
+                    "editorMode": "code",
+                    "expr": "# Disk Time-to-Full Prediction (in days)\n# Uses predict_linear to estimate when disk will be 100% full\n(\n  (\n    node_filesystem_size_bytes{instance=~\"$instance.*\", mountpoint=\"/\", fstype!=\"tmpfs\"}\n    - node_filesystem_avail_bytes{instance=~\"$instance.*\", mountpoint=\"/\", fstype!=\"tmpfs\"}\n  )\n  / node_filesystem_size_bytes{instance=~\"$instance.*\", mountpoint=\"/\", fstype!=\"tmpfs\"}\n  -\n  predict_linear(\n    node_filesystem_avail_bytes{instance=~\"$instance.*\", mountpoint=\"/\", fstype!=\"tmpfs\"}[24h],\n    86400\n  ) / node_filesystem_size_bytes{instance=~\"$instance.*\", mountpoint=\"/\", fstype!=\"tmpfs\"}\n) * -1 / (\n  1 - (\n    node_filesystem_size_bytes{instance=~\"$instance.*\", mountpoint=\"/\", fstype!=\"tmpfs\"}\n    - node_filesystem_avail_bytes{instance=~\"$instance.*\", mountpoint=\"/\", fstype!=\"tmpfs\"}\n  ) / node_filesystem_size_bytes{instance=~\"$instance.*\", mountpoint=\"/\", fstype!=\"tmpfs\"}\n)",
+                    "legendFormat": "Days to Full",
+                    "range": true,
+                    "refId": "A"
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "${DS_PROMETHEUS}"
+                    },
+                    "editorMode": "code",
+                    "expr": "# Alternative simpler formula: Days until full based on linear prediction\n(\n  node_filesystem_avail_bytes{instance=~\"$instance.*\", mountpoint=\"/\", fstype!=\"tmpfs\"}\n  / \n  clamp_min(\n    -deriv(node_filesystem_avail_bytes{instance=~\"$instance.*\", mountpoint=\"/\", fstype!=\"tmpfs\"}[24h]),\n    0.0001\n  )\n) / 86400",
+                    "hide": true,
+                    "legendFormat": "Days to Full (Alt)",
+                    "range": true,
+                    "refId": "B"
+                }
+            ],
+            "title": "Disk Time-to-Full (Predictive)",
+            "type": "stat"
+        },
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 6
+            },
+            "id": 10,
+            "panels": [],
+            "title": "📈 Saturation (Leading Indicators)",
+            "type": "row"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "${DS_PROMETHEUS}"
+            },
+            "description": "CPU Load Average divided by CPU cores. Value > 1.0 indicates saturation.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "mappings": [],
+                    "max": 2,
+                    "min": 0,
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 0.7
+                            },
+                            {
+                                "color": "orange",
+                                "value": 1
+                            },
+                            {
+                                "color": "red",
+                                "value": 1.5
+                            }
+                        ]
+                    },
+                    "unit": "none"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 7,
+                "w": 6,
+                "x": 0,
+                "y": 7
+            },
+            "id": 11,
+            "options": {
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showThresholdLabels": true,
+                "showThresholdMarkers": true
+            },
+            "pluginVersion": "10.0.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "${DS_PROMETHEUS}"
+                    },
+                    "editorMode": "code",
+                    "expr": "# CPU Load vs Cores ratio (1-minute load average / CPU count)\nnode_load1{instance=~\"$instance.*\"}\n/\ncount without(cpu, mode) (node_cpu_seconds_total{instance=~\"$instance.*\", mode=\"idle\"})",
+                    "legendFormat": "Load/Cores",
+                    "range": true,
+                    "refId": "A"
+                }
+            ],
+            "title": "CPU Load vs Cores",
+            "type": "gauge"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "${DS_PROMETHEUS}"
+            },
+            "description": "Connection pool utilization. Warning > 80%",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "mappings": [],
+                    "max": 100,
+                    "min": 0,
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 70
+                            },
+                            {
+                                "color": "orange",
+                                "value": 80
+                            },
+                            {
+                                "color": "red",
+                                "value": 90
+                            }
+                        ]
+                    },
+                    "unit": "percent"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 7,
+                "w": 6,
+                "x": 6,
+                "y": 7
+            },
+            "id": 12,
+            "options": {
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showThresholdLabels": true,
+                "showThresholdMarkers": true
+            },
+            "pluginVersion": "10.0.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "${DS_PROMETHEUS}"
+                    },
+                    "editorMode": "code",
+                    "expr": "# MySQL Connection Pool Usage %\n(\n  mysql_global_status_threads_connected{instance=~\"$instance.*\"}\n  / \n  mysql_global_variables_max_connections{instance=~\"$instance.*\"}\n) * 100",
+                    "legendFormat": "MySQL Connections %",
+                    "range": true,
+                    "refId": "A"
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "${DS_PROMETHEUS}"
+                    },
+                    "editorMode": "code",
+                    "expr": "# Oracle Session Pool Usage %\n(\n  oracledb_sessions_active{instance=~\"$instance.*\"}\n  / \n  oracledb_resource_limit_max{instance=~\"$instance.*\", resource=\"sessions\"}\n) * 100",
+                    "legendFormat": "Oracle Sessions %",
+                    "range": true,
+                    "refId": "B"
+                }
+            ],
+            "title": "Connection Pool Usage %",
+            "type": "gauge"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "${DS_PROMETHEUS}"
+            },
+            "description": "Disk I/O operations per second (Read/Write)",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisCenteredZero": false,
+                        "axisColorMode": "text",
+                        "axisLabel": "IOPS",
+                        "axisPlacement": "auto",
+                        "barAlignment": 0,
+                        "drawStyle": "line",
+                        "fillOpacity": 20,
+                        "gradientMode": "opacity",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "iops"
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byRegexp",
+                            "options": ".*Write.*"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "red",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byRegexp",
+                            "options": ".*Read.*"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "green",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 7,
+                "w": 6,
+                "x": 12,
+                "y": 7
+            },
+            "id": 13,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "min",
+                        "max",
+                        "lastNotNull"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "showLegend": true
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "pluginVersion": "10.0.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "${DS_PROMETHEUS}"
+                    },
+                    "editorMode": "code",
+                    "expr": "# Read IOPS\nrate(node_disk_reads_completed_total{instance=~\"$instance.*\", device!~\"loop.*|dm-.*\"}[$interval])",
+                    "legendFormat": "Read IOPS - {{device}}",
+                    "range": true,
+                    "refId": "A"
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "${DS_PROMETHEUS}"
+                    },
+                    "editorMode": "code",
+                    "expr": "# Write IOPS\nrate(node_disk_writes_completed_total{instance=~\"$instance.*\", device!~\"loop.*|dm-.*\"}[$interval])",
+                    "legendFormat": "Write IOPS - {{device}}",
+                    "range": true,
+                    "refId": "B"
+                }
+            ],
+            "title": "IOPS & Throughput",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "${DS_PROMETHEUS}"
+            },
+            "description": "Memory breakdown: Cached/Buffers (Good) vs Active/Application (Actual usage)",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisCenteredZero": false,
+                        "axisColorMode": "text",
+                        "axisLabel": "Memory",
+                        "axisPlacement": "auto",
+                        "barAlignment": 0,
+                        "drawStyle": "line",
+                        "fillOpacity": 40,
+                        "gradientMode": "opacity",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 1,
+                        "pointSize": 5,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "normal"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "bytes"
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Active/Used"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "red",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Cached"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "blue",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Buffers"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "green",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Free"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "super-light-green",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 7,
+                "w": 6,
+                "x": 18,
+                "y": 7
+            },
+            "id": 14,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "min",
+                        "max",
+                        "lastNotNull"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "showLegend": true
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "pluginVersion": "10.0.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "${DS_PROMETHEUS}"
+                    },
+                    "editorMode": "code",
+                    "expr": "# Active/Used Memory (Application usage)\nnode_memory_MemTotal_bytes{instance=~\"$instance.*\"} \n- node_memory_MemFree_bytes{instance=~\"$instance.*\"} \n- node_memory_Cached_bytes{instance=~\"$instance.*\"} \n- node_memory_Buffers_bytes{instance=~\"$instance.*\"}",
+                    "legendFormat": "Active/Used",
+                    "range": true,
+                    "refId": "A"
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "${DS_PROMETHEUS}"
+                    },
+                    "editorMode": "code",
+                    "expr": "# Cached Memory (Good usage for file caching)\nnode_memory_Cached_bytes{instance=~\"$instance.*\"}",
+                    "legendFormat": "Cached",
+                    "range": true,
+                    "refId": "B"
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "${DS_PROMETHEUS}"
+                    },
+                    "editorMode": "code",
+                    "expr": "# Buffers (Good usage for I/O buffering)\nnode_memory_Buffers_bytes{instance=~\"$instance.*\"}",
+                    "legendFormat": "Buffers",
+                    "range": true,
+                    "refId": "C"
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "${DS_PROMETHEUS}"
+                    },
+                    "editorMode": "code",
+                    "expr": "# Free Memory\nnode_memory_MemFree_bytes{instance=~\"$instance.*\"}",
+                    "legendFormat": "Free",
+                    "range": true,
+                    "refId": "D"
+                }
+            ],
+            "title": "Memory Usage Breakdown",
+            "type": "timeseries"
+        },
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 14
+            },
+            "id": 20,
+            "panels": [],
+            "title": "⚡ Performance (User Experience)",
+            "type": "row"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "${DS_PROMETHEUS}"
+            },
+            "description": "Query latency percentiles: p50, p95, p99 to detect outliers and performance issues",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisCenteredZero": false,
+                        "axisColorMode": "text",
+                        "axisLabel": "Latency",
+                        "axisPlacement": "auto",
+                        "barAlignment": 0,
+                        "drawStyle": "line",
+                        "fillOpacity": 10,
+                        "gradientMode": "opacity",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "line+area"
+                        }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "orange",
+                                "value": 0.1
+                            },
+                            {
+                                "color": "red",
+                                "value": 1
+                            }
+                        ]
+                    },
+                    "unit": "s"
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byRegexp",
+                            "options": ".*p50.*"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "green",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byRegexp",
+                            "options": ".*p95.*"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "yellow",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byRegexp",
+                            "options": ".*p99.*"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "red",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 8,
+                "x": 0,
+                "y": 15
+            },
+            "id": 21,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "min",
+                        "max",
+                        "lastNotNull"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "showLegend": true
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "pluginVersion": "10.0.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "${DS_PROMETHEUS}"
+                    },
+                    "editorMode": "code",
+                    "expr": "# MySQL Query Latency p50\nhistogram_quantile(0.50, rate(mysql_global_status_query_response_time_seconds_bucket{instance=~\"$instance.*\"}[$interval]))\nor\n# Oracle Response Time p50 (from wait events)\nhistogram_quantile(0.50, rate(oracledb_wait_time_seconds_bucket{instance=~\"$instance.*\"}[$interval]))",
+                    "legendFormat": "p50 Latency",
+                    "range": true,
+                    "refId": "A"
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "${DS_PROMETHEUS}"
+                    },
+                    "editorMode": "code",
+                    "expr": "# MySQL Query Latency p95\nhistogram_quantile(0.95, rate(mysql_global_status_query_response_time_seconds_bucket{instance=~\"$instance.*\"}[$interval]))\nor\n# Oracle Response Time p95\nhistogram_quantile(0.95, rate(oracledb_wait_time_seconds_bucket{instance=~\"$instance.*\"}[$interval]))",
+                    "legendFormat": "p95 Latency",
+                    "range": true,
+                    "refId": "B"
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "${DS_PROMETHEUS}"
+                    },
+                    "editorMode": "code",
+                    "expr": "# MySQL Query Latency p99\nhistogram_quantile(0.99, rate(mysql_global_status_query_response_time_seconds_bucket{instance=~\"$instance.*\"}[$interval]))\nor\n# Oracle Response Time p99\nhistogram_quantile(0.99, rate(oracledb_wait_time_seconds_bucket{instance=~\"$instance.*\"}[$interval]))",
+                    "legendFormat": "p99 Latency",
+                    "range": true,
+                    "refId": "C"
+                }
+            ],
+            "title": "Query Latency (Percentiles)",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "${DS_PROMETHEUS}"
+            },
+            "description": "Queries/Transactions per second (QPS/TPS) - Database throughput",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisCenteredZero": false,
+                        "axisColorMode": "text",
+                        "axisLabel": "Operations/sec",
+                        "axisPlacement": "auto",
+                        "barAlignment": 0,
+                        "drawStyle": "line",
+                        "fillOpacity": 20,
+                        "gradientMode": "opacity",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "ops"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 8,
+                "x": 8,
+                "y": 15
+            },
+            "id": 22,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "min",
+                        "max",
+                        "lastNotNull"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "showLegend": true
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "pluginVersion": "10.0.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "${DS_PROMETHEUS}"
+                    },
+                    "editorMode": "code",
+                    "expr": "# MySQL Queries Per Second (QPS)\nrate(mysql_global_status_queries{instance=~\"$instance.*\"}[$interval])",
+                    "legendFormat": "MySQL QPS",
+                    "range": true,
+                    "refId": "A"
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "${DS_PROMETHEUS}"
+                    },
+                    "editorMode": "code",
+                    "expr": "# MySQL SELECT rate\nrate(mysql_global_status_commands_total{instance=~\"$instance.*\", command=\"select\"}[$interval])",
+                    "legendFormat": "MySQL SELECT/s",
+                    "range": true,
+                    "refId": "B"
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "${DS_PROMETHEUS}"
+                    },
+                    "editorMode": "code",
+                    "expr": "# MySQL INSERT/UPDATE/DELETE rate\nrate(mysql_global_status_commands_total{instance=~\"$instance.*\", command=~\"insert|update|delete\"}[$interval])",
+                    "legendFormat": "MySQL {{command}}/s",
+                    "range": true,
+                    "refId": "C"
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "${DS_PROMETHEUS}"
+                    },
+                    "editorMode": "code",
+                    "expr": "# Oracle Transactions Per Second (TPS) - User Commits\nrate(oracledb_activity_user_commits_total{instance=~\"$instance.*\"}[$interval])",
+                    "legendFormat": "Oracle TPS (Commits)",
+                    "range": true,
+                    "refId": "D"
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "${DS_PROMETHEUS}"
+                    },
+                    "editorMode": "code",
+                    "expr": "# Oracle Execute Count\nrate(oracledb_activity_execute_count_total{instance=~\"$instance.*\"}[$interval])",
+                    "legendFormat": "Oracle Executes/s",
+                    "range": true,
+                    "refId": "E"
+                }
+            ],
+            "title": "Transaction Rate (QPS/TPS)",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "${DS_PROMETHEUS}"
+            },
+            "description": "Deadlocks, lock waits, and aborted connections per second",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisCenteredZero": false,
+                        "axisColorMode": "text",
+                        "axisLabel": "Errors/sec",
+                        "axisPlacement": "auto",
+                        "barAlignment": 0,
+                        "drawStyle": "line",
+                        "fillOpacity": 30,
+                        "gradientMode": "opacity",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "lineInterpolation": "stepAfter",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "line+area"
+                        }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "orange",
+                                "value": 0.1
+                            },
+                            {
+                                "color": "red",
+                                "value": 1
+                            }
+                        ]
+                    },
+                    "unit": "ops"
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byRegexp",
+                            "options": ".*Deadlock.*"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "dark-red",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byRegexp",
+                            "options": ".*Aborted.*"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "orange",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 8,
+                "x": 16,
+                "y": 15
+            },
+            "id": 23,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "min",
+                        "max",
+                        "lastNotNull"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "showLegend": true
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "pluginVersion": "10.0.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "${DS_PROMETHEUS}"
+                    },
+                    "editorMode": "code",
+                    "expr": "# MySQL Deadlocks per second (InnoDB)\nrate(mysql_global_status_innodb_deadlocks{instance=~\"$instance.*\"}[$interval])",
+                    "legendFormat": "MySQL Deadlocks/s",
+                    "range": true,
+                    "refId": "A"
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "${DS_PROMETHEUS}"
+                    },
+                    "editorMode": "code",
+                    "expr": "# MySQL Aborted Clients per second\nrate(mysql_global_status_aborted_clients{instance=~\"$instance.*\"}[$interval])",
+                    "legendFormat": "MySQL Aborted Clients/s",
+                    "range": true,
+                    "refId": "B"
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "${DS_PROMETHEUS}"
+                    },
+                    "editorMode": "code",
+                    "expr": "# MySQL Aborted Connections per second\nrate(mysql_global_status_aborted_connects{instance=~\"$instance.*\"}[$interval])",
+                    "legendFormat": "MySQL Aborted Connects/s",
+                    "range": true,
+                    "refId": "C"
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "${DS_PROMETHEUS}"
+                    },
+                    "editorMode": "code",
+                    "expr": "# MySQL Lock Waits per second\nrate(mysql_global_status_innodb_row_lock_waits{instance=~\"$instance.*\"}[$interval])",
+                    "legendFormat": "MySQL Lock Waits/s",
+                    "range": true,
+                    "refId": "D"
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "${DS_PROMETHEUS}"
+                    },
+                    "editorMode": "code",
+                    "expr": "# Oracle Deadlocks\nrate(oracledb_wait_time_seconds_total{instance=~\"$instance.*\", wait_class=\"deadlock\"}[$interval])",
+                    "legendFormat": "Oracle Deadlocks/s",
+                    "range": true,
+                    "refId": "E"
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "${DS_PROMETHEUS}"
+                    },
+                    "editorMode": "code",
+                    "expr": "# Oracle Enqueue Waits (Lock contention)\nrate(oracledb_wait_time_seconds_total{instance=~\"$instance.*\", wait_class=\"Application\"}[$interval])",
+                    "legendFormat": "Oracle App Wait/s",
+                    "range": true,
+                    "refId": "F"
+                }
+            ],
+            "title": "Deadlock / Error Rate",
+            "type": "timeseries"
+        },
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 23
+            },
+            "id": 30,
+            "panels": [],
+            "title": "🔒 Security & Compliance (User Management)",
+            "type": "row"
+        },
+        {
+            "datasource": {
+                "type": "mysql",
+                "uid": "mysql-datasource"
+            },
+            "description": "MySQL user accounts status, password expiry, and security compliance",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "custom": {
+                        "align": "auto",
+                        "cellOptions": {
+                            "type": "auto"
+                        },
+                        "filterable": true,
+                        "inspect": true
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            }
+                        ]
+                    }
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Status"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.cellOptions",
+                                "value": {
+                                    "mode": "basic",
+                                    "type": "color-background"
+                                }
+                            },
+                            {
+                                "id": "mappings",
+                                "value": [
+                                    {
+                                        "options": {
+                                            "N": {
+                                                "color": "green",
+                                                "index": 0,
+                                                "text": "Open"
+                                            },
+                                            "Y": {
+                                                "color": "red",
+                                                "index": 1,
+                                                "text": "Locked"
+                                            }
+                                        },
+                                        "type": "value"
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Days_Until_Expiry"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.cellOptions",
+                                "value": {
+                                    "mode": "gradient",
+                                    "type": "color-background"
+                                }
+                            },
+                            {
+                                "id": "thresholds",
+                                "value": {
+                                    "mode": "absolute",
+                                    "steps": [
+                                        {
+                                            "color": "red",
+                                            "value": null
+                                        },
+                                        {
+                                            "color": "yellow",
+                                            "value": 7
+                                        },
+                                        {
+                                            "color": "green",
+                                            "value": 30
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "User"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 200
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 10,
+                "w": 12,
+                "x": 0,
+                "y": 24
+            },
+            "id": 31,
+            "options": {
+                "cellHeight": "sm",
+                "footer": {
+                    "countRows": true,
+                    "fields": "",
+                    "reducer": [
+                        "count"
+                    ],
+                    "show": true
+                },
+                "showHeader": true,
+                "sortBy": [
+                    {
+                        "desc": false,
+                        "displayName": "Days_Until_Expiry"
+                    }
+                ]
+            },
+            "pluginVersion": "10.0.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "mysql",
+                        "uid": "mysql-datasource"
+                    },
+                    "editorMode": "code",
+                    "format": "table",
+                    "rawQuery": true,
+                    "rawSql": "SELECT \n    CONCAT(User, '@', Host) AS User,\n    CASE \n        WHEN account_locked = 'Y' THEN 'Locked'\n        WHEN password_expired = 'Y' THEN 'Expired'\n        ELSE 'Open'\n    END AS Status,\n    COALESCE(password_last_changed, 'Never') AS Last_Password_Change,\n    CASE \n        WHEN password_lifetime IS NOT NULL AND password_last_changed IS NOT NULL THEN \n            GREATEST(0, password_lifetime - DATEDIFF(NOW(), password_last_changed))\n        WHEN password_lifetime IS NULL AND (SELECT @@default_password_lifetime) > 0 AND password_last_changed IS NOT NULL THEN\n            GREATEST(0, (SELECT @@default_password_lifetime) - DATEDIFF(NOW(), password_last_changed))\n        ELSE NULL\n    END AS Days_Until_Expiry,\n    account_locked AS Is_Locked,\n    password_expired AS Is_Expired\nFROM mysql.user\nWHERE User NOT IN ('mysql.sys', 'mysql.session', 'mysql.infoschema', 'root')\nORDER BY Days_Until_Expiry ASC, User;",
+                    "refId": "A"
+                }
+            ],
+            "title": "MySQL User Security Status",
+            "type": "table"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "description": "Oracle database session and user metrics from oracle_exporter. Note: For full user security audit, configure a direct Oracle datasource.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "custom": {
+                        "align": "auto",
+                        "cellOptions": {
+                            "type": "auto"
+                        },
+                        "filterable": true,
+                        "inspect": true
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            }
+                        ]
+                    }
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "STATUS"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.cellOptions",
+                                "value": {
+                                    "mode": "basic",
+                                    "type": "color-background"
+                                }
+                            },
+                            {
+                                "id": "mappings",
+                                "value": [
+                                    {
+                                        "options": {
+                                            "EXPIRED": {
+                                                "color": "red",
+                                                "index": 2,
+                                                "text": "EXPIRED"
+                                            },
+                                            "EXPIRED & LOCKED": {
+                                                "color": "dark-red",
+                                                "index": 3,
+                                                "text": "EXPIRED & LOCKED"
+                                            },
+                                            "LOCKED": {
+                                                "color": "orange",
+                                                "index": 1,
+                                                "text": "LOCKED"
+                                            },
+                                            "OPEN": {
+                                                "color": "green",
+                                                "index": 0,
+                                                "text": "OPEN"
+                                            }
+                                        },
+                                        "type": "value"
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "DAYS_UNTIL_EXPIRY"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.cellOptions",
+                                "value": {
+                                    "mode": "gradient",
+                                    "type": "color-background"
+                                }
+                            },
+                            {
+                                "id": "thresholds",
+                                "value": {
+                                    "mode": "absolute",
+                                    "steps": [
+                                        {
+                                            "color": "red",
+                                            "value": null
+                                        },
+                                        {
+                                            "color": "yellow",
+                                            "value": 7
+                                        },
+                                        {
+                                            "color": "green",
+                                            "value": 30
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "USERNAME"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.width",
+                                "value": 200
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 10,
+                "w": 12,
+                "x": 12,
+                "y": 24
+            },
+            "id": 32,
+            "options": {
+                "cellHeight": "sm",
+                "footer": {
+                    "countRows": true,
+                    "fields": "",
+                    "reducer": [
+                        "count"
+                    ],
+                    "show": true
+                },
+                "showHeader": true,
+                "sortBy": [
+                    {
+                        "desc": false,
+                        "displayName": "DAYS_UNTIL_EXPIRY"
+                    }
+                ]
+            },
+            "pluginVersion": "10.0.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    },
+                    "editorMode": "code",
+                    "expr": "oracledb_sessions_value{instance=~\"$instance.*\", status=\"ACTIVE\", type=\"USER\"}",
+                    "format": "table",
+                    "legendFormat": "Active Sessions",
+                    "range": true,
+                    "refId": "A",
+                    "instant": true
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    },
+                    "editorMode": "code",
+                    "expr": "oracledb_sessions_value{instance=~\"$instance.*\", status=\"INACTIVE\", type=\"USER\"}",
+                    "format": "table",
+                    "legendFormat": "Inactive Sessions",
+                    "range": true,
+                    "refId": "B",
+                    "instant": true
+                }
+            ],
+            "title": "Oracle Session Status",
+            "type": "table"
+        }
+    ],
+    "refresh": "30s",
+    "schemaVersion": 38,
+    "style": "dark",
+    "tags": [
+        "database",
+        "oracle",
+        "mysql",
+        "proactive-monitoring",
+        "on-premise"
+    ],
+    "templating": {
+        "list": [
+            {
+                "current": {},
+                "datasource": {
+                    "type": "prometheus",
+                    "uid": "${DS_PROMETHEUS}"
+                },
+                "definition": "label_values(up, instance)",
+                "hide": 0,
+                "includeAll": true,
+                "label": "Instance",
+                "multi": true,
+                "name": "instance",
+                "options": [],
+                "query": {
+                    "query": "label_values(up, instance)",
+                    "refId": "StandardVariableQuery"
+                },
+                "refresh": 2,
+                "regex": "",
+                "skipUrlSync": false,
+                "sort": 1,
+                "type": "query"
+            },
+            {
+                "auto": true,
+                "auto_count": 50,
+                "auto_min": "30s",
+                "current": {
+                    "selected": false,
+                    "text": "auto",
+                    "value": "$__auto_interval_interval"
+                },
+                "hide": 0,
+                "label": "Interval",
+                "name": "interval",
+                "options": [
+                    {
+                        "selected": true,
+                        "text": "auto",
+                        "value": "$__auto_interval_interval"
+                    },
+                    {
+                        "selected": false,
+                        "text": "30s",
+                        "value": "30s"
+                    },
+                    {
+                        "selected": false,
+                        "text": "1m",
+                        "value": "1m"
+                    },
+                    {
+                        "selected": false,
+                        "text": "5m",
+                        "value": "5m"
+                    },
+                    {
+                        "selected": false,
+                        "text": "15m",
+                        "value": "15m"
+                    },
+                    {
+                        "selected": false,
+                        "text": "1h",
+                        "value": "1h"
+                    },
+                    {
+                        "selected": false,
+                        "text": "6h",
+                        "value": "6h"
+                    },
+                    {
+                        "selected": false,
+                        "text": "1d",
+                        "value": "1d"
+                    }
+                ],
+                "query": "30s,1m,5m,15m,1h,6h,1d",
+                "queryValue": "",
+                "refresh": 2,
+                "skipUrlSync": false,
+                "type": "interval"
+            },
+            {
+                "current": {},
+                "hide": 2,
+                "includeAll": false,
+                "label": "Prometheus",
+                "multi": false,
+                "name": "DS_PROMETHEUS",
+                "options": [],
+                "query": "prometheus",
+                "refresh": 1,
+                "regex": "",
+                "skipUrlSync": false,
+                "type": "datasource"
+            }
+        ]
+    },
+    "time": {
+        "from": "now-1h",
+        "to": "now"
+    },
+    "timepicker": {
+        "refresh_intervals": [
+            "5s",
+            "10s",
+            "30s",
+            "1m",
+            "5m",
+            "15m",
+            "30m",
+            "1h",
+            "2h",
+            "1d"
+        ],
+        "time_options": [
+            "5m",
+            "15m",
+            "1h",
+            "6h",
+            "12h",
+            "24h",
+            "2d",
+            "7d",
+            "30d"
+        ]
+    },
+    "timezone": "browser",
+    "title": "Database Proactive Monitoring",
+    "uid": "db-proactive-monitoring",
+    "version": 1,
+    "weekStart": ""
+}

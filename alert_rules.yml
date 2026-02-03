@@ -1,0 +1,175 @@
+groups:
+- name: infrastructure_alerts
+  rules:
+  # Critical: Oracle Service Down
+  - alert: OracleDatabaseDown
+    expr: up{job="oracle_db"} == 0
+    for: 1m
+    labels:
+      severity: critical
+      service: oracle
+    annotations:
+      summary: "Oracle database is down"
+      description: "{{ $labels.instance }} of oracle_db has been unreachable for more than 1 minute."
+
+  # Critical: MySQL Service Down
+  - alert: MySQLDatabaseDown
+    expr: up{job="mysql_db"} == 0
+    for: 1m
+    labels:
+      severity: critical
+      service: mysql
+    annotations:
+      summary: "MySQL database is down"
+      description: "{{ $labels.instance }} of mysql_db has been unreachable for more than 1 minute."
+
+  # Critical: High CPU Usage
+  - alert: HighCPUUsage
+    expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 85
+    for: 5m
+    labels:
+      severity: critical
+      service: infrastructure
+    annotations:
+      summary: "High CPU usage on {{ $labels.instance }}"
+      description: "CPU usage is above 85% for more than 5 minutes on {{ $labels.instance }}."
+
+  # Warning: Elevated CPU Usage
+  - alert: ElevatedCPUUsage
+    expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 70
+    for: 10m
+    labels:
+      severity: warning
+      service: infrastructure
+    annotations:
+      summary: "Elevated CPU usage on {{ $labels.instance }}"
+      description: "CPU usage is above 70% for more than 10 minutes on {{ $labels.instance }}."
+
+  # Critical: High Memory Usage
+  - alert: HighMemoryUsage
+    expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 90
+    for: 5m
+    labels:
+      severity: critical
+      service: infrastructure
+    annotations:
+      summary: "High memory usage on {{ $labels.instance }}"
+      description: "Memory usage is above 90% for more than 5 minutes on {{ $labels.instance }}."
+
+  # Warning: Elevated Memory Usage
+  - alert: ElevatedMemoryUsage
+    expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 80
+    for: 10m
+    labels:
+      severity: warning
+      service: infrastructure
+    annotations:
+      summary: "Elevated memory usage on {{ $labels.instance }}"
+      description: "Memory usage is above 80% for more than 10 minutes on {{ $labels.instance }}."
+
+  # Critical: Oracle - Too Many Active Sessions
+  - alert: OracleHighActiveSessions
+    expr: oracledb_sessions_value{status="ACTIVE", type="USER"} > 100
+    for: 5m
+    labels:
+      severity: critical
+      service: oracle
+      database: oracle
+    annotations:
+      summary: "Oracle has too many active sessions"
+      description: "Oracle database on {{ $labels.instance }} has {{ $value }} active sessions (threshold: 100)."
+
+  # Warning: Oracle - Elevated Active Sessions
+  - alert: OracleElevatedActiveSessions
+    expr: oracledb_sessions_value{status="ACTIVE", type="USER"} > 75
+    for: 10m
+    labels:
+      severity: warning
+      service: oracle
+      database: oracle
+    annotations:
+      summary: "Oracle has elevated active sessions"
+      description: "Oracle database on {{ $labels.instance }} has {{ $value }} active sessions (threshold: 75)."
+
+  # Critical: MySQL - Too Many Connections
+  - alert: MySQLHighConnections
+    expr: mysql_global_status_threads_connected > 80
+    for: 5m
+    labels:
+      severity: critical
+      service: mysql
+      database: mysql
+    annotations:
+      summary: "MySQL has too many connections"
+      description: "MySQL database on {{ $labels.instance }} has {{ $value }} connections (threshold: 80)."
+
+  # Warning: MySQL - Elevated Connections
+  - alert: MySQLElevatedConnections
+    expr: mysql_global_status_threads_connected > 60
+    for: 10m
+    labels:
+      severity: warning
+      service: mysql
+      database: mysql
+    annotations:
+      summary: "MySQL has elevated connections"
+      description: "MySQL database on {{ $labels.instance }} has {{ $value }} connections (threshold: 60)."
+
+  # Critical: High Query Rate (MySQL)
+  - alert: MySQLHighQueryRate
+    expr: rate(mysql_global_status_queries[5m]) > 1000
+    for: 5m
+    labels:
+      severity: critical
+      service: mysql
+      database: mysql
+    annotations:
+      summary: "MySQL has very high query rate"
+      description: "MySQL on {{ $labels.instance }} is processing {{ $value | humanize }} queries/sec (threshold: 1000)."
+
+  # Warning: Elevated Query Rate (MySQL)
+  - alert: MySQLElevatedQueryRate
+    expr: rate(mysql_global_status_queries[5m]) > 500
+    for: 10m
+    labels:
+      severity: warning
+      service: mysql
+      database: mysql
+    annotations:
+      summary: "MySQL has elevated query rate"
+      description: "MySQL on {{ $labels.instance }} is processing {{ $value | humanize }} queries/sec (threshold: 500)."
+
+  # Critical: High Transaction Rate (Oracle)
+  - alert: OracleHighTransactionRate
+    expr: rate(oracledb_activity_user_commits_total[5m]) > 500
+    for: 5m
+    labels:
+      severity: critical
+      service: oracle
+      database: oracle
+    annotations:
+      summary: "Oracle has very high transaction rate"
+      description: "Oracle on {{ $labels.instance }} is processing {{ $value | humanize }} transactions/sec (threshold: 500)."
+
+  # Warning: Elevated Transaction Rate (Oracle)
+  - alert: OracleElevatedTransactionRate
+    expr: rate(oracledb_activity_user_commits_total[5m]) > 250
+    for: 10m
+    labels:
+      severity: warning
+      service: oracle
+      database: oracle
+    annotations:
+      summary: "Oracle has elevated transaction rate"
+      description: "Oracle on {{ $labels.instance }} is processing {{ $value | humanize }} transactions/sec (threshold: 250)."
+
+  # Critical: Disk Space Low
+  - alert: DiskSpaceLow
+    expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 < 10
+    for: 5m
+    labels:
+      severity: critical
+      service: infrastructure
+    annotations:
+      summary: "Disk space low on {{ $labels.instance }}"
+      description: "Disk space is below 10% on {{ $labels.instance }} ({{ $value | humanize }}% available)."

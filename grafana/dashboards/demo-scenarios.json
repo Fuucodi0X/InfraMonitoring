@@ -1,0 +1,734 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "Demo scenarios dashboard (oracle-db default) for quickly showing each alert scenario status and DB user lists",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 99,
+      "panels": [],
+      "title": "📊 Overall Status",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "description": "Is the exporter running and reachable by Prometheus?",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            {
+              "options": {
+                "0": { "color": "red", "index": 0, "text": "DOWN" },
+                "1": { "color": "green", "index": 1, "text": "UP" }
+              },
+              "type": "value"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "green", "value": 1 }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 5, "w": 12, "x": 0, "y": 1 },
+      "id": 100,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["last"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "editorMode": "code",
+          "expr": "up{job=\"${db}_db\"}",
+          "instant": true,
+          "legendFormat": "Exporter",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Exporter Status",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "description": "Is the database itself up (reported by exporter)?",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            {
+              "options": {
+                "0": { "color": "red", "index": 0, "text": "DOWN" },
+                "1": { "color": "green", "index": 1, "text": "UP" }
+              },
+              "type": "value"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "green", "value": 1 }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 5, "w": 12, "x": 12, "y": 1 },
+      "id": 101,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["last"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "editorMode": "code",
+          "expr": "mysql_up{job=\"${db}_db\"} or oracledb_up{job=\"${db}_db\"}",
+          "instant": true,
+          "legendFormat": "Database",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Database Status",
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 6 },
+      "id": 1,
+      "panels": [],
+      "title": "🎬 Demo Scenario Status (Alerts)",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "description": "Scenario 1 from demo-scenarios.sh: stop mysqld_exporter -> DatabaseDown",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            {
+              "options": {
+                "0": { "color": "green", "index": 0, "text": "OK" },
+                "1": { "color": "red", "index": 1, "text": "FIRING" }
+              },
+              "type": "value"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 1 }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 7 },
+      "id": 2,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["last"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "editorMode": "code",
+          "expr": "max(ALERTS{alertname=\"DatabaseDown\", alertstate=\"firing\", job=\"${db}_db\"}) or vector(0)",
+          "instant": true,
+          "legendFormat": "DatabaseDown",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Scenario 1: DatabaseDown",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "description": "Scenario 2 from demo-scenarios.sh: CPU load. Shows warning+critical state.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            {
+              "options": {
+                "0": { "color": "green", "index": 0, "text": "OK" },
+                "1": { "color": "orange", "index": 1, "text": "ELEVATED" },
+                "2": { "color": "red", "index": 2, "text": "HIGH" }
+              },
+              "type": "value"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 1 },
+              { "color": "red", "value": 2 }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 5, "w": 6, "x": 6, "y": 7 },
+      "id": 3,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["last"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "editorMode": "code",
+          "expr": "(max(ALERTS{alertname=\"HighCPUUsage\", alertstate=\"firing\"}) or vector(0))*2 + (max(ALERTS{alertname=\"ElevatedCPUUsage\", alertstate=\"firing\"}) or vector(0))",
+          "instant": true,
+          "legendFormat": "CPU Alert Level",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Scenario 2: CPU (Elevated/High)",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "description": "Scenario 3 from demo-scenarios.sh: memory pressure. Shows warning+critical state.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            {
+              "options": {
+                "0": { "color": "green", "index": 0, "text": "OK" },
+                "1": { "color": "orange", "index": 1, "text": "ELEVATED" },
+                "2": { "color": "red", "index": 2, "text": "HIGH" }
+              },
+              "type": "value"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 1 },
+              { "color": "red", "value": 2 }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 5, "w": 6, "x": 12, "y": 7 },
+      "id": 4,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["last"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "editorMode": "code",
+          "expr": "(max(ALERTS{alertname=\"HighMemoryUsage\", alertstate=\"firing\"}) or vector(0))*2 + (max(ALERTS{alertname=\"ElevatedMemoryUsage\", alertstate=\"firing\"}) or vector(0))",
+          "instant": true,
+          "legendFormat": "Memory Alert Level",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Scenario 3: Memory (Elevated/High)",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "description": "Scenario 4 from demo-scenarios.sh: open many MySQL connections.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            {
+              "options": {
+                "0": { "color": "green", "index": 0, "text": "OK" },
+                "1": { "color": "orange", "index": 1, "text": "ELEVATED" },
+                "2": { "color": "red", "index": 2, "text": "HIGH" }
+              },
+              "type": "value"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 1 },
+              { "color": "red", "value": 2 }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 5, "w": 6, "x": 18, "y": 7 },
+      "id": 5,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["last"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "editorMode": "code",
+          "expr": "(max(ALERTS{alertname=\"MySQLHighConnections\", alertstate=\"firing\", job=\"${db}_db\"}) or vector(0))*2 + (max(ALERTS{alertname=\"MySQLElevatedConnections\", alertstate=\"firing\", job=\"${db}_db\"}) or vector(0))",
+          "instant": true,
+          "legendFormat": "MySQL Connections Alert Level",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Scenario 4: MySQL Connections (Elevated/High)",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "description": "Scenario 5: Oracle active sessions alert state.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            {
+              "options": {
+                "0": { "color": "green", "index": 0, "text": "OK" },
+                "1": { "color": "orange", "index": 1, "text": "ELEVATED" },
+                "2": { "color": "red", "index": 2, "text": "HIGH" }
+              },
+              "type": "value"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 1 },
+              { "color": "red", "value": 2 }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 12 },
+      "id": 6,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["last"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "editorMode": "code",
+          "expr": "(max(ALERTS{alertname=\"OracleHighActiveSessions\", alertstate=\"firing\", job=\"${db}_db\"}) or vector(0))*2 + (max(ALERTS{alertname=\"OracleElevatedActiveSessions\", alertstate=\"firing\", job=\"${db}_db\"}) or vector(0))",
+          "instant": true,
+          "legendFormat": "Oracle Sessions Alert Level",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Scenario 5: Oracle Active Sessions (Elevated/High)",
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 17 },
+      "id": 20,
+      "panels": [],
+      "title": "📈 Scenario Metrics (Trends)",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "description": "Exporter & node availability for the selected DB host.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineInterpolation": "stepAfter",
+            "lineWidth": 2,
+            "pointSize": 4,
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 18 },
+      "id": 21,
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "editorMode": "code",
+          "expr": "up{job=~\"${db}_db|node_${db}\"}",
+          "legendFormat": "{{job}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Up (Exporter + Node)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "description": "CPU and memory % from node_exporter for the selected DB host (drives the CPU/Memory alert scenarios).",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "%",
+            "axisPlacement": "auto",
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 4,
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "line" }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 70 },
+              { "color": "red", "value": 85 }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 18 },
+      "id": 22,
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "editorMode": "code",
+          "expr": "100 - (avg by(instance) (rate(node_cpu_seconds_total{job=\"node_${db}\", mode=\"idle\"}[5m])) * 100)",
+          "legendFormat": "CPU %",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "editorMode": "code",
+          "expr": "(1 - (node_memory_MemAvailable_bytes{job=\"node_${db}\"} / node_memory_MemTotal_bytes{job=\"node_${db}\"})) * 100",
+          "legendFormat": "Memory %",
+          "range": true,
+          "refId": "B"
+        }
+      ],
+      "title": "CPU% + Memory% (Node)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "description": "DB pressure metric for Scenario 4/5. MySQL shows connections; Oracle shows active user sessions.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 4,
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 25 },
+      "id": 23,
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "editorMode": "code",
+          "expr": "mysql_global_status_threads_connected{job=\"${db}_db\"}",
+          "legendFormat": "MySQL connections",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "editorMode": "code",
+          "expr": "oracledb_sessions_value{job=\"${db}_db\", status=\"ACTIVE\", type=\"USER\"}",
+          "legendFormat": "Oracle active sessions",
+          "range": true,
+          "refId": "B"
+        }
+      ],
+      "title": "Connections / Sessions (DB)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "description": "Throughput metric (not an alert scenario in this dashboard, but useful for demos).",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "axisCenteredZero": true,
+            "axisColorMode": "text",
+            "axisLabel": "ops/s",
+            "axisPlacement": "auto",
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 4,
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "ops"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 25 },
+      "id": 24,
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "editorMode": "code",
+          "expr": "rate(mysql_global_status_queries{job=\"${db}_db\"}[5m])",
+          "legendFormat": "MySQL QPS",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "editorMode": "code",
+          "expr": "rate(oracledb_activity_user_commits_total{job=\"${db}_db\"}[5m])",
+          "legendFormat": "Oracle TPS (commits)",
+          "range": true,
+          "refId": "B"
+        }
+      ],
+      "title": "Query / Transaction Rate (DB)",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 32 },
+      "id": 10,
+      "panels": [],
+      "title": "👥 Users (Direct DB Queries)",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "datasource", "uid": "-- Mixed --" },
+      "description": "Users table for the selected DB. The panel runs both queries, but only the matching DB returns rows.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "align": "auto", "cellOptions": { "type": "auto" }, "filterable": true, "inspect": true },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 12, "w": 24, "x": 0, "y": 33 },
+      "id": 11,
+      "options": {
+        "cellHeight": "sm",
+        "footer": { "countRows": true, "fields": "", "reducer": ["count"], "show": true },
+        "showHeader": true
+      },
+      "pluginVersion": "10.0.0",
+      "transformations": [
+        { "id": "merge", "options": {} }
+      ],
+      "targets": [
+        {
+          "datasource": { "type": "mysql", "uid": "mysql-datasource" },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT \n  CONCAT(User, '@', Host) AS User,\n  CASE \n    WHEN account_locked = 'Y' THEN 'Locked'\n    WHEN password_expired = 'Y' THEN 'Expired'\n    ELSE 'Open'\n  END AS Status,\n  COALESCE(password_last_changed, 'Never') AS Last_Password_Change,\n  CASE \n    WHEN '${db}' <> 'mysql' THEN NULL\n    WHEN password_lifetime IS NOT NULL AND password_last_changed IS NOT NULL THEN DATE_ADD(password_last_changed, INTERVAL password_lifetime DAY)\n    WHEN password_lifetime IS NULL AND (SELECT @@default_password_lifetime) > 0 AND password_last_changed IS NOT NULL THEN DATE_ADD(password_last_changed, INTERVAL (SELECT @@default_password_lifetime) DAY)\n    ELSE NULL\n  END AS Expire_Date,\n  CASE \n    WHEN '${db}' <> 'mysql' THEN NULL\n    WHEN password_lifetime IS NOT NULL AND password_last_changed IS NOT NULL THEN GREATEST(0, password_lifetime - DATEDIFF(NOW(), password_last_changed))\n    WHEN password_lifetime IS NULL AND (SELECT @@default_password_lifetime) > 0 AND password_last_changed IS NOT NULL THEN GREATEST(0, (SELECT @@default_password_lifetime) - DATEDIFF(NOW(), password_last_changed))\n    ELSE NULL\n  END AS Days_Until_Expiry\nFROM mysql.user\nWHERE '${db}' = 'mysql'\nORDER BY User;",
+          "refId": "mysql"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "editorMode": "code",
+          "expr": "max by (username, account_status, expiry_date, days_until_expiry, job, instance) (oracledb_users_value{job=\"${db}_db\"})",
+          "format": "table",
+          "instant": true,
+          "range": false,
+          "refId": "oracle"
+        }
+      ],
+      "title": "Users",
+      "type": "table"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["demo", "alerts", "oracle", "mysql"],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "selected": true,
+          "text": "oracle-db",
+          "value": "oracle"
+        },
+        "hide": 0,
+        "includeAll": false,
+        "label": "Database",
+        "multi": false,
+        "name": "db",
+        "options": [
+          { "selected": true, "text": "oracle-db", "value": "oracle" },
+          { "selected": false, "text": "mysql-db", "value": "mysql" }
+        ],
+        "query": "oracle-db : oracle, mysql-db : mysql",
+        "skipUrlSync": false,
+        "type": "custom"
+      },
+      {
+        "current": {},
+        "hide": 2,
+        "includeAll": false,
+        "label": "Prometheus",
+        "multi": false,
+        "name": "DS_PROMETHEUS",
+        "options": [],
+        "query": "prometheus",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "type": "datasource"
+      }
+    ]
+  },
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {
+    "refresh_intervals": ["5s", "10s", "30s", "1m", "5m", "15m", "30m", "1h", "2h", "1d"],
+    "time_options": ["5m", "15m", "1h", "6h", "12h", "24h", "2d", "7d", "30d"]
+  },
+  "timezone": "browser",
+  "title": "Demo Scenarios (Oracle default)",
+  "uid": "demo-scenarios",
+  "version": 1,
+  "weekStart": ""
+}

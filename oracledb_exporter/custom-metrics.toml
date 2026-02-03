@@ -1,0 +1,19 @@
+[[metric]]
+context = "users"
+labels = ["username", "account_status", "expiry_date", "days_until_expiry"]
+metricsdesc = { value = "Oracle users list (1 per user) with account status, expiry date, and days until expiry." }
+request = '''
+SELECT
+  username,
+  account_status,
+  TO_CHAR(expiry_date, 'YYYY-MM-DD"T"HH24:MI:SS') as expiry_date,
+  CASE
+    WHEN expiry_date IS NULL THEN NULL
+    ELSE TO_CHAR(TRUNC(expiry_date - SYSDATE))
+  END as days_until_expiry,
+  1 as value
+FROM dba_users
+WHERE oracle_maintained = 'N'
+ORDER BY username
+'''
+

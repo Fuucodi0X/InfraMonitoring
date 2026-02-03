@@ -1,0 +1,13 @@
+apiVersion: 1
+
+providers:
+  - name: 'Database Monitoring'
+    orgId: 1
+    folder: 'Infrastructure'
+    folderUid: 'infrastructure'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards

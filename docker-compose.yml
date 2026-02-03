@@ -1,4 +1,3 @@
-
 services:
   oracle:
     image: gvenzl/oracle-free:slim-faststart
@@ -30,8 +29,11 @@ services:
     container_name: oracle_exporter
     environment:
       DATA_SOURCE_NAME: oracle://system:demo123@oracle-db:1521/FREE
+      CUSTOM_METRICS: /custom-metrics.toml
     ports:
       - "9161:9161"
+    volumes:
+      - ./oracledb_exporter/custom-metrics.toml:/custom-metrics.toml:ro
     depends_on:
       - oracle
 
@@ -51,7 +53,7 @@ services:
   node_exporter_oracle:
     image: prom/node-exporter:latest
     container_name: node_exporter_oracle
-    network_mode: "service:oracle"  # Shares network/pid with oracle for accurate host metrics
+    network_mode: "service:oracle" # Shares network/pid with oracle for accurate host metrics
     pid: "service:oracle"
     volumes:
       - /:/host:ro,rslave
@@ -77,6 +79,7 @@ services:
     container_name: prometheus
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./alert_rules.yml:/etc/prometheus/alert_rules.yml
       - prometheus_data:/prometheus
     ports:
       - "9091:9090"
@@ -86,6 +89,17 @@ services:
     container_name: alertmanager
     ports:
       - "9093:9093"
+    volumes:
+      - ./alertmanager.yml:/etc/alertmanager/alertmanager.yml
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+
+  mailpit:
+    image: axllent/mailpit
+    container_name: mailpit
+    ports:
+      - "8025:8025"
+      - "1025:1025"
 
   grafana:
     image: grafana/grafana:latest
@@ -96,6 +110,11 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=admin123
     volumes:
       - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+    depends_on:
+      - prometheus
 
 volumes:
   prometheus_data:
