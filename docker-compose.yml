@@ -93,6 +93,32 @@ services:
     command:
       - "--config.file=/etc/blackbox_exporter/config.yml"
 
+  db-ops-exporter:
+    build:
+      context: ./db_ops_exporter
+    container_name: db-ops-exporter
+    environment:
+      ORACLE_MONITOR_USER: ${ORACLE_MONITOR_USER}
+      ORACLE_MONITOR_PASSWORD: ${ORACLE_MONITOR_PASSWORD}
+      ORACLE_DSN: ${ORACLE_DSN}
+      MYSQL_HOST: ${MYSQL_HOST}
+      MYSQL_PORT: ${MYSQL_PORT}
+      MYSQL_MONITOR_USER: ${MYSQL_MONITOR_USER}
+      MYSQL_MONITOR_PASSWORD: ${MYSQL_MONITOR_PASSWORD}
+      DB_OPS_EXPORTER_PORT: ${DB_OPS_EXPORTER_PORT}
+      DB_OPS_POLL_INTERVAL_SECONDS: ${DB_OPS_POLL_INTERVAL_SECONDS}
+      DB_OPS_ENABLE_ORACLE: ${DB_OPS_ENABLE_ORACLE}
+      DB_OPS_ENABLE_MYSQL: ${DB_OPS_ENABLE_MYSQL}
+      DB_OPS_ENVIRONMENT: ${DB_OPS_ENVIRONMENT}
+      DB_OPS_TEAM: ${DB_OPS_TEAM}
+      DB_OPS_OWNER: ${DB_OPS_OWNER}
+      DB_BACKUP_CRITICAL_SECONDS: ${DB_BACKUP_CRITICAL_SECONDS}
+    ports:
+      - "9187:9187"
+    depends_on:
+      - oracle
+      - mysql
+
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus

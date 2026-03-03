@@ -59,6 +59,16 @@ scrape_configs:
           team: dba
           owner: dba-team
 
+  - job_name: db_ops
+    static_configs:
+      - targets: ["db-ops-exporter:9187"]
+        labels:
+          service: infrastructure
+          category: operational
+          environment: pilot
+          team: dba
+          owner: dba-team
+
   - job_name: listener_oracle
     metrics_path: /probe
     params:
