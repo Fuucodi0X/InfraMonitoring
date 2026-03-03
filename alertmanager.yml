@@ -109,17 +109,6 @@ receivers:
         send_resolved: true
         headers:
           Subject: '[CRITICAL] {{ .GroupLabels.alertname }} - {{ .GroupLabels.service }}'
-        html: |
-          <h2>Critical Alert</h2>
-          <p><strong>Alert:</strong> {{ .GroupLabels.alertname }}</p>
-          <p><strong>Service:</strong> {{ .GroupLabels.service }}</p>
-          <p><strong>Severity:</strong> CRITICAL</p>
-          <hr>
-          {{ range .Alerts }}
-          <h3>{{ .Annotations.summary }}</h3>
-          <p>{{ .Annotations.description }}</p>
-          <p><strong>Started:</strong> {{ .StartsAt }}</p>
-          {{ end }}
   
   - name: 'warning-alerts'
     email_configs:
@@ -127,15 +116,6 @@ receivers:
         send_resolved: true
         headers:
           Subject: '[WARNING] {{ .GroupLabels.alertname }} - {{ .GroupLabels.service }}'
-        html: |
-          <h2>Warning Alert</h2>
-          <p><strong>Alert:</strong> {{ .GroupLabels.alertname }}</p>
-          <p><strong>Service:</strong> {{ .GroupLabels.service }}</p>
-          <hr>
-          {{ range .Alerts }}
-          <h3>{{ .Annotations.summary }}</h3>
-          <p>{{ .Annotations.description }}</p>
-          {{ end }}
   
   - name: 'oracle-team'
     email_configs:
