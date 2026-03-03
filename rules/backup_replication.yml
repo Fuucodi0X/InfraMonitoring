@@ -1,0 +1,140 @@
+groups:
+  - name: backup_replication_alerts
+    rules:
+      - alert: DatabaseBackupStaleWarning
+        expr: db_backup_collection_supported == 1 and db_backup_age_seconds > 64800
+        for: 15m
+        labels:
+          severity: warning
+          service: infrastructure
+          environment: pilot
+          team: dba
+          owner: dba-team
+          category: operational
+        annotations:
+          summary: "Database backup is stale (warning)"
+          description: "{{ $labels.db_engine }} backup age is {{ $value }} seconds on {{ $labels.instance }}."
+          impact: "Recovery point objectives may be at risk if no fresh backup is available."
+          action: "Check backup scheduler and latest job history for {{ $labels.db_engine }}."
+          runbook_url: "https://runbooks.example.com/db/backup-freshness"
+
+      - alert: DatabaseBackupStaleCritical
+        expr: db_backup_collection_supported == 1 and db_backup_age_seconds > 86400
+        for: 10m
+        labels:
+          severity: critical
+          service: infrastructure
+          environment: pilot
+          team: dba
+          owner: dba-team
+          category: operational
+        annotations:
+          summary: "Database backup is stale (critical)"
+          description: "{{ $labels.db_engine }} backup age is {{ $value }} seconds on {{ $labels.instance }}."
+          impact: "Backup freshness breach increases data loss risk for restores."
+          action: "Run or repair backup workflow immediately and confirm successful completion."
+          runbook_url: "https://runbooks.example.com/db/backup-freshness"
+
+      - alert: ReplicationLagWarning
+        expr: db_replication_configured == 1 and db_replication_lag_seconds > 60
+        for: 10m
+        labels:
+          severity: warning
+          service: infrastructure
+          environment: pilot
+          team: dba
+          owner: dba-team
+          category: operational
+        annotations:
+          summary: "Replication lag elevated"
+          description: "{{ $labels.db_engine }} replication lag is {{ $value }} seconds on {{ $labels.instance }}."
+          impact: "Read replicas or standby databases may serve stale data."
+          action: "Inspect replication pipeline, network throughput, and apply worker health."
+          runbook_url: "https://runbooks.example.com/db/replication-lag"
+
+      - alert: ReplicationLagCritical
+        expr: db_replication_configured == 1 and db_replication_lag_seconds > 300
+        for: 5m
+        labels:
+          severity: critical
+          service: infrastructure
+          environment: pilot
+          team: dba
+          owner: dba-team
+          category: operational
+        annotations:
+          summary: "Replication lag critical"
+          description: "{{ $labels.db_engine }} replication lag is {{ $value }} seconds on {{ $labels.instance }}."
+          impact: "Failover and DR posture may be compromised due to large data gap."
+          action: "Prioritize replica catch-up and validate log/apply pipeline integrity."
+          runbook_url: "https://runbooks.example.com/db/replication-lag"
+
+      - alert: ReplicationThreadDownCritical
+        expr: db_replication_configured == 1 and (db_replication_io_thread_running == 0 or db_replication_sql_thread_running == 0)
+        for: 2m
+        labels:
+          severity: critical
+          service: mysql
+          db_engine: mysql
+          environment: pilot
+          team: dba
+          owner: dba-team
+          category: operational
+        annotations:
+          summary: "MySQL replication thread down"
+          description: "MySQL replication IO/SQL thread is stopped on {{ $labels.instance }}."
+          impact: "Replica cannot ingest/apply changes and lag will continue to grow."
+          action: "Check SHOW REPLICA STATUS for last error and restart failed thread safely."
+          runbook_url: "https://runbooks.example.com/db/mysql-replication"
+
+      - alert: OracleDataGuardLagCritical
+        expr: db_replication_configured{db_engine="oracle"} == 1 and db_dataguard_apply_lag_seconds{db_engine="oracle"} > 300
+        for: 5m
+        labels:
+          severity: critical
+          service: oracle
+          db_engine: oracle
+          environment: pilot
+          team: dba
+          owner: dba-team
+          category: operational
+        annotations:
+          summary: "Oracle Data Guard lag critical"
+          description: "Oracle Data Guard apply lag is {{ $value }} seconds on {{ $labels.instance }}."
+          impact: "Standby currency and failover readiness are degraded."
+          action: "Investigate transport/apply lag and standby process health."
+          runbook_url: "https://runbooks.example.com/db/oracle-dataguard"
+
+      - alert: DBAlertLogErrorBurstWarning
+        expr: db_alertlog_collection_supported == 1 and db_alertlog_error_count_15m > 20
+        for: 10m
+        labels:
+          severity: warning
+          service: infrastructure
+          environment: pilot
+          team: dba
+          owner: dba-team
+          category: operational
+        annotations:
+          summary: "Database alert/error log burst"
+          description: "{{ $labels.db_engine }} emitted {{ $value }} error-level alert-log entries in 15 minutes on {{ $labels.instance }}."
+          impact: "Repeated warning/error events may indicate emerging operational instability."
+          action: "Review recent alert-log entries and triage recurring root cause."
+          runbook_url: "https://runbooks.example.com/db/alert-log"
+
+      - alert: DBAlertLogCriticalEvents
+        expr: db_alertlog_collection_supported == 1 and db_alertlog_critical_count_15m > 0
+        for: 5m
+        labels:
+          severity: critical
+          service: infrastructure
+          environment: pilot
+          team: dba
+          owner: dba-team
+          category: operational
+        annotations:
+          summary: "Database critical alert-log events detected"
+          description: "{{ $labels.db_engine }} emitted {{ $value }} critical alert-log entries in 15 minutes on {{ $labels.instance }}."
+          impact: "Critical database health incidents may be in progress."
+          action: "Open alert log immediately and execute incident runbook."
+          runbook_url: "https://runbooks.example.com/db/alert-log"
