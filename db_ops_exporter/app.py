@@ -134,6 +134,39 @@ class DbOpsCollector:
             "Unix timestamp of last collector poll per engine.",
             labels,
         )
+        self.db_user_collection_supported = Gauge(
+            "db_user_collection_supported",
+            "User-account metric collection supported for this engine/instance: 1=yes, 0=no.",
+            labels,
+        )
+        self.db_tablespace_collection_supported = Gauge(
+            "db_tablespace_collection_supported",
+            "Tablespace metric collection supported for this engine/instance: 1=yes, 0=no.",
+            labels,
+        )
+        self.db_user_accounts_total = Gauge(
+            "db_user_accounts_total",
+            "User account totals by state.",
+            labels + ["state"],
+        )
+        self.db_user_password_expiry_days = Gauge(
+            "db_user_password_expiry_days",
+            "Days until user password expiry by account.",
+            labels + ["username", "account_status"],
+        )
+        self.db_tablespace_used_percent = Gauge(
+            "db_tablespace_used_percent",
+            "Tablespace usage percentage.",
+            labels + ["tablespace_name", "tablespace_type"],
+        )
+        self.db_tablespace_free_bytes = Gauge(
+            "db_tablespace_free_bytes",
+            "Free bytes for tablespace.",
+            labels + ["tablespace_name", "tablespace_type"],
+        )
+
+        self._mysql_user_series_seen = set()
+        self._mysql_tablespace_series_seen = set()
 
     def _series_labels(self, instance: str, service: str, db_engine: str):
         return {
@@ -156,6 +189,10 @@ class DbOpsCollector:
         self.db_dataguard_apply_lag_seconds.labels(**series).set(0)
         self.db_alertlog_error_count_15m.labels(**series).set(0)
         self.db_alertlog_critical_count_15m.labels(**series).set(0)
+        self.db_user_collection_supported.labels(**series).set(0)
+        self.db_tablespace_collection_supported.labels(**series).set(0)
+        for state in ("open", "locked", "expired", "expiring_7d", "expiring_30d"):
+            self.db_user_accounts_total.labels(**series, state=state).set(0)
 
     def _collect_oracle(self):
         series = self._series_labels(self.oracle_dsn, "oracle", "oracle")
@@ -374,12 +411,254 @@ class DbOpsCollector:
                 print(f"[db_ops][mysql] alert-log metrics unavailable: {exc}", flush=True)
                 self.db_alertlog_collection_supported.labels(**series).set(0)
 
+            try:
+                cursor.execute(
+                    """
+                    SELECT
+                      COUNT(*) AS total_users,
+                      SUM(CASE WHEN account_locked = 'Y' THEN 1 ELSE 0 END) AS locked_users,
+                      SUM(CASE WHEN password_expired = 'Y' THEN 1 ELSE 0 END) AS expired_users,
+                      SUM(
+                        CASE
+                          WHEN account_locked = 'Y' OR password_expired = 'Y' THEN 0
+                          WHEN (
+                            CASE
+                              WHEN password_lifetime IS NOT NULL AND password_last_changed IS NOT NULL THEN
+                                GREATEST(0, password_lifetime - DATEDIFF(CURDATE(), password_last_changed))
+                              WHEN password_lifetime IS NULL
+                                   AND @@default_password_lifetime > 0
+                                   AND password_last_changed IS NOT NULL THEN
+                                GREATEST(0, @@default_password_lifetime - DATEDIFF(CURDATE(), password_last_changed))
+                              ELSE 99999
+                            END
+                          ) <= 7 THEN 1
+                          ELSE 0
+                        END
+                      ) AS expiring_7d_users,
+                      SUM(
+                        CASE
+                          WHEN account_locked = 'Y' OR password_expired = 'Y' THEN 0
+                          WHEN (
+                            CASE
+                              WHEN password_lifetime IS NOT NULL AND password_last_changed IS NOT NULL THEN
+                                GREATEST(0, password_lifetime - DATEDIFF(CURDATE(), password_last_changed))
+                              WHEN password_lifetime IS NULL
+                                   AND @@default_password_lifetime > 0
+                                   AND password_last_changed IS NOT NULL THEN
+                                GREATEST(0, @@default_password_lifetime - DATEDIFF(CURDATE(), password_last_changed))
+                              ELSE 99999
+                            END
+                          ) <= 30 THEN 1
+                          ELSE 0
+                        END
+                      ) AS expiring_30d_users
+                    FROM mysql.user
+                    WHERE User NOT IN ('mysql.sys', 'mysql.session', 'mysql.infoschema', 'root')
+                    """
+                )
+                summary_row = cursor.fetchone() or {}
+                total_users = int(summary_row.get("total_users") or 0)
+                locked_users = int(summary_row.get("locked_users") or 0)
+                expired_users = int(summary_row.get("expired_users") or 0)
+                expiring_7d = int(summary_row.get("expiring_7d_users") or 0)
+                expiring_30d = int(summary_row.get("expiring_30d_users") or 0)
+                open_users = max(total_users - locked_users - expired_users, 0)
+
+                self.db_user_collection_supported.labels(**series).set(1)
+                self.db_user_accounts_total.labels(**series, state="open").set(open_users)
+                self.db_user_accounts_total.labels(**series, state="locked").set(locked_users)
+                self.db_user_accounts_total.labels(**series, state="expired").set(expired_users)
+                self.db_user_accounts_total.labels(**series, state="expiring_7d").set(expiring_7d)
+                self.db_user_accounts_total.labels(**series, state="expiring_30d").set(expiring_30d)
+
+                cursor.execute(
+                    """
+                    SELECT
+                      CONCAT(User, '@', Host) AS username,
+                      CASE
+                        WHEN account_locked = 'Y' THEN 'LOCKED'
+                        WHEN password_expired = 'Y' THEN 'EXPIRED'
+                        ELSE 'OPEN'
+                      END AS account_status,
+                      CASE
+                        WHEN password_expired = 'Y' THEN 0
+                        WHEN password_lifetime IS NOT NULL AND password_last_changed IS NOT NULL THEN
+                          GREATEST(0, password_lifetime - DATEDIFF(CURDATE(), password_last_changed))
+                        WHEN password_lifetime IS NULL
+                             AND @@default_password_lifetime > 0
+                             AND password_last_changed IS NOT NULL THEN
+                          GREATEST(0, @@default_password_lifetime - DATEDIFF(CURDATE(), password_last_changed))
+                        ELSE 99999
+                      END AS days_until_expiry
+                    FROM mysql.user
+                    WHERE User NOT IN ('mysql.sys', 'mysql.session', 'mysql.infoschema', 'root')
+                    """
+                )
+                active_user_series = set()
+                for row in cursor.fetchall() or []:
+                    username = str(row.get("username") or "")
+                    account_status = str(row.get("account_status") or "UNKNOWN").upper()
+                    days_until_expiry = _safe_float(row.get("days_until_expiry"))
+                    if not username:
+                        continue
+                    self.db_user_password_expiry_days.labels(
+                        **series,
+                        username=username,
+                        account_status=account_status,
+                    ).set(days_until_expiry if days_until_expiry is not None else 99999)
+                    active_user_series.add((username, account_status))
+
+                stale_user_series = self._mysql_user_series_seen - active_user_series
+                for username, account_status in stale_user_series:
+                    try:
+                        self.db_user_password_expiry_days.remove(
+                            series["instance"],
+                            series["service"],
+                            series["db_engine"],
+                            series["environment"],
+                            series["team"],
+                            series["owner"],
+                            username,
+                            account_status,
+                        )
+                    except KeyError:
+                        pass
+                self._mysql_user_series_seen = active_user_series
+            except Exception as exc:
+                print(f"[db_ops][mysql] user/account metrics unavailable: {exc}", flush=True)
+                self.db_user_collection_supported.labels(**series).set(0)
+                self.db_user_accounts_total.labels(**series, state="open").set(0)
+                self.db_user_accounts_total.labels(**series, state="locked").set(0)
+                self.db_user_accounts_total.labels(**series, state="expired").set(0)
+                self.db_user_accounts_total.labels(**series, state="expiring_7d").set(0)
+                self.db_user_accounts_total.labels(**series, state="expiring_30d").set(0)
+                for username, account_status in self._mysql_user_series_seen:
+                    try:
+                        self.db_user_password_expiry_days.remove(
+                            series["instance"],
+                            series["service"],
+                            series["db_engine"],
+                            series["environment"],
+                            series["team"],
+                            series["owner"],
+                            username,
+                            account_status,
+                        )
+                    except KeyError:
+                        pass
+                self._mysql_user_series_seen = set()
+
+            try:
+                cursor.execute(
+                    """
+                    SELECT
+                      table_schema AS tablespace_name,
+                      'schema' AS tablespace_type,
+                      COALESCE(SUM(data_length + index_length), 0) AS used_bytes,
+                      COALESCE(SUM(data_free), 0) AS free_bytes,
+                      CASE
+                        WHEN COALESCE(SUM(data_length + index_length + data_free), 0) = 0 THEN 0
+                        ELSE
+                          (COALESCE(SUM(data_length + index_length), 0) /
+                           COALESCE(SUM(data_length + index_length + data_free), 1)) * 100
+                      END AS used_percent
+                    FROM information_schema.tables
+                    WHERE table_schema NOT IN ('mysql', 'information_schema', 'performance_schema', 'sys')
+                    GROUP BY table_schema
+                    """
+                )
+                rows = cursor.fetchall() or []
+                self.db_tablespace_collection_supported.labels(**series).set(1)
+
+                active_tablespace_series = set()
+                for row in rows:
+                    tablespace_name = str(row.get("tablespace_name") or "")
+                    tablespace_type = str(row.get("tablespace_type") or "schema")
+                    used_percent = _safe_float(row.get("used_percent")) or 0
+                    free_bytes = _safe_float(row.get("free_bytes")) or 0
+                    if not tablespace_name:
+                        continue
+                    self.db_tablespace_used_percent.labels(
+                        **series,
+                        tablespace_name=tablespace_name,
+                        tablespace_type=tablespace_type,
+                    ).set(max(used_percent, 0))
+                    self.db_tablespace_free_bytes.labels(
+                        **series,
+                        tablespace_name=tablespace_name,
+                        tablespace_type=tablespace_type,
+                    ).set(max(free_bytes, 0))
+                    active_tablespace_series.add((tablespace_name, tablespace_type))
+
+                stale_tablespace_series = self._mysql_tablespace_series_seen - active_tablespace_series
+                for tablespace_name, tablespace_type in stale_tablespace_series:
+                    try:
+                        self.db_tablespace_used_percent.remove(
+                            series["instance"],
+                            series["service"],
+                            series["db_engine"],
+                            series["environment"],
+                            series["team"],
+                            series["owner"],
+                            tablespace_name,
+                            tablespace_type,
+                        )
+                    except KeyError:
+                        pass
+                    try:
+                        self.db_tablespace_free_bytes.remove(
+                            series["instance"],
+                            series["service"],
+                            series["db_engine"],
+                            series["environment"],
+                            series["team"],
+                            series["owner"],
+                            tablespace_name,
+                            tablespace_type,
+                        )
+                    except KeyError:
+                        pass
+                self._mysql_tablespace_series_seen = active_tablespace_series
+            except Exception as exc:
+                print(f"[db_ops][mysql] tablespace metrics unavailable: {exc}", flush=True)
+                self.db_tablespace_collection_supported.labels(**series).set(0)
+                for tablespace_name, tablespace_type in self._mysql_tablespace_series_seen:
+                    try:
+                        self.db_tablespace_used_percent.remove(
+                            series["instance"],
+                            series["service"],
+                            series["db_engine"],
+                            series["environment"],
+                            series["team"],
+                            series["owner"],
+                            tablespace_name,
+                            tablespace_type,
+                        )
+                    except KeyError:
+                        pass
+                    try:
+                        self.db_tablespace_free_bytes.remove(
+                            series["instance"],
+                            series["service"],
+                            series["db_engine"],
+                            series["environment"],
+                            series["team"],
+                            series["owner"],
+                            tablespace_name,
+                            tablespace_type,
+                        )
+                    except KeyError:
+                        pass
+                self._mysql_tablespace_series_seen = set()
+
         except Exception as exc:
             print(f"[db_ops][mysql] connection or base query failure: {exc}", flush=True)
             success = 0
             self.db_backup_collection_supported.labels(**series).set(0)
             self.db_alertlog_collection_supported.labels(**series).set(0)
             self.db_replication_configured.labels(**series).set(0)
+            self.db_user_collection_supported.labels(**series).set(0)
+            self.db_tablespace_collection_supported.labels(**series).set(0)
         finally:
             self.db_ops_collection_success.labels(**series).set(success)
             self.db_ops_last_scrape_timestamp_seconds.labels(**series).set(time.time())
