@@ -1,0 +1,56 @@
+groups:
+  - name: operational_alerts
+    rules:
+      - alert: OracleListenerDown
+        expr: probe_success{job="listener_oracle"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: oracle
+          db_engine: oracle
+          environment: pilot
+          team: dba
+          owner: dba-team
+          category: operational
+        annotations:
+          summary: "Oracle listener endpoint is down"
+          description: "TCP probe to {{ $labels.instance }} failed for more than 1 minute."
+          impact: "Clients may not connect to Oracle service."
+          action: "Validate listener process and port 1521 accessibility."
+          runbook_url: "https://runbooks.example.com/db/oracle-listener"
+
+      - alert: MySQLListenerDown
+        expr: probe_success{job="listener_mysql"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: mysql
+          db_engine: mysql
+          environment: pilot
+          team: dba
+          owner: dba-team
+          category: operational
+        annotations:
+          summary: "MySQL endpoint is down"
+          description: "TCP probe to {{ $labels.instance }} failed for more than 1 minute."
+          impact: "Applications may not connect to MySQL service."
+          action: "Validate mysqld service and port 3306 accessibility."
+          runbook_url: "https://runbooks.example.com/db/mysql-listener"
+
+      - alert: OracleOutstandingAlerts
+        expr: oracledb_alert_critical_count_value > 0
+        for: 5m
+        labels:
+          severity: warning
+          service: oracle
+          db_engine: oracle
+          environment: pilot
+          team: dba
+          owner: dba-team
+          category: operational
+        annotations:
+          summary: "Oracle outstanding alerts detected"
+          description: "Oracle reports {{ $value }} outstanding internal alerts."
+          impact: "Oracle raised internal health warnings needing DBA triage."
+          action: "Inspect DBA_OUTSTANDING_ALERTS and follow Oracle diagnostics workflow."
+          runbook_url: "https://runbooks.example.com/db/oracle-alerts"

@@ -1,28 +1,111 @@
 global:
   scrape_interval: 15s
+  external_labels:
+    environment: pilot
+    team: dba
+    owner: dba-team
 
 alerting:
   alertmanagers:
-  - static_configs:
-    - targets:
-      - alertmanager:9093
+    - static_configs:
+        - targets:
+            - alertmanager:9093
 
 rule_files:
-  - "alert_rules.yml"
+  - "/etc/prometheus/rules/*.yml"
 
 scrape_configs:
-  - job_name: 'node_oracle'
+  - job_name: node_oracle
     static_configs:
-      - targets: ['oracle-db:9100']
-  - job_name: 'node_mysql'
+      - targets: ["oracle-db:9100"]
+        labels:
+          service: oracle
+          db_engine: oracle
+          db_role: primary
+          environment: pilot
+          team: dba
+          owner: dba-team
+
+  - job_name: node_mysql
     static_configs:
-      - targets: ['mysql-db:9100']
-  - job_name: 'oracle_db'
+      - targets: ["mysql-db:9100"]
+        labels:
+          service: mysql
+          db_engine: mysql
+          db_role: primary
+          environment: pilot
+          team: dba
+          owner: dba-team
+
+  - job_name: oracle_db
     static_configs:
-      - targets: ['oracledb_exporter:9161']
-  - job_name: 'mysql_db'
+      - targets: ["oracledb_exporter:9161"]
+        labels:
+          service: oracle
+          db_engine: oracle
+          db_role: primary
+          environment: pilot
+          team: dba
+          owner: dba-team
+
+  - job_name: mysql_db
     static_configs:
-      - targets: ['mysqld_exporter:9104']
-  - job_name: 'prometheus'
+      - targets: ["mysqld_exporter:9104"]
+        labels:
+          service: mysql
+          db_engine: mysql
+          db_role: primary
+          environment: pilot
+          team: dba
+          owner: dba-team
+
+  - job_name: listener_oracle
+    metrics_path: /probe
+    params:
+      module: [tcp_connect]
     static_configs:
-      - targets: ['localhost:9090']
+      - targets: ["oracle-db:1521"]
+        labels:
+          service: oracle
+          db_engine: oracle
+          category: operational
+          environment: pilot
+          team: dba
+          owner: dba-team
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox_exporter:9115
+
+  - job_name: listener_mysql
+    metrics_path: /probe
+    params:
+      module: [tcp_connect]
+    static_configs:
+      - targets: ["mysql-db:3306"]
+        labels:
+          service: mysql
+          db_engine: mysql
+          category: operational
+          environment: pilot
+          team: dba
+          owner: dba-team
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox_exporter:9115
+
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+        labels:
+          service: infrastructure
+          environment: pilot
+          team: dba
+          owner: dba-team

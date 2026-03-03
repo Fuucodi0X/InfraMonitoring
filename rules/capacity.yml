@@ -1,0 +1,89 @@
+groups:
+  - name: capacity_alerts
+    rules:
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance,service,environment,team,owner) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 85
+        for: 5m
+        labels:
+          severity: warning
+          service: infrastructure
+          environment: pilot
+          team: dba
+          owner: dba-team
+          category: capacity
+        annotations:
+          summary: "High CPU usage on {{ $labels.instance }}"
+          description: "CPU usage is above 85% for over 5 minutes."
+          impact: "Sustained saturation can increase DB latency and queueing."
+          action: "Check top CPU consumers and active workload spikes."
+          runbook_url: "https://runbooks.example.com/infra/cpu"
+
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 90
+        for: 5m
+        labels:
+          severity: warning
+          service: infrastructure
+          environment: pilot
+          team: dba
+          owner: dba-team
+          category: capacity
+        annotations:
+          summary: "High memory usage on {{ $labels.instance }}"
+          description: "Memory usage is above 90% for over 5 minutes."
+          impact: "Memory pressure can degrade DB response and cause swapping."
+          action: "Review memory consumers and DB buffer configuration."
+          runbook_url: "https://runbooks.example.com/infra/memory"
+
+      - alert: DiskSpaceLow
+        expr: (node_filesystem_avail_bytes{mountpoint="/",fstype!="tmpfs"} / node_filesystem_size_bytes{mountpoint="/",fstype!="tmpfs"}) * 100 < 15
+        for: 10m
+        labels:
+          severity: warning
+          service: infrastructure
+          environment: pilot
+          team: dba
+          owner: dba-team
+          category: capacity
+        annotations:
+          summary: "Disk space low on {{ $labels.instance }}"
+          description: "Root filesystem free space is below 15%."
+          impact: "DB writes and system stability are at risk if growth continues."
+          action: "Free space or expand volume capacity."
+          runbook_url: "https://runbooks.example.com/infra/disk"
+
+      - alert: OracleTablespaceUsageHigh
+        expr: oracledb_tablespace_usage_value >= 85
+        for: 10m
+        labels:
+          severity: warning
+          service: oracle
+          db_engine: oracle
+          environment: pilot
+          team: dba
+          owner: dba-team
+          category: capacity
+        annotations:
+          summary: "Oracle tablespace utilization high"
+          description: "Tablespace {{ $labels.tablespace_name }} is at {{ $value }}% utilization."
+          impact: "Upcoming space exhaustion can interrupt writes and maintenance jobs."
+          action: "Add/resize datafiles or purge archived data."
+          runbook_url: "https://runbooks.example.com/db/oracle-tablespace"
+
+      - alert: OracleTablespaceUsageCritical
+        expr: oracledb_tablespace_usage_value >= 95
+        for: 5m
+        labels:
+          severity: critical
+          service: oracle
+          db_engine: oracle
+          environment: pilot
+          team: dba
+          owner: dba-team
+          category: capacity
+        annotations:
+          summary: "Oracle tablespace utilization critical"
+          description: "Tablespace {{ $labels.tablespace_name }} is at {{ $value }}% utilization."
+          impact: "Immediate risk of space exhaustion and failed transactions."
+          action: "Expand space immediately and validate autoextend settings."
+          runbook_url: "https://runbooks.example.com/db/oracle-tablespace"

@@ -1,0 +1,38 @@
+groups:
+  - name: availability_alerts
+    rules:
+      - alert: OracleDatabaseDown
+        expr: up{job="oracle_db"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: oracle
+          db_engine: oracle
+          environment: pilot
+          team: dba
+          owner: dba-team
+          category: availability
+        annotations:
+          summary: "Oracle exporter unreachable"
+          description: "{{ $labels.instance }} is unreachable for job oracle_db."
+          impact: "Oracle visibility and likely DB availability issue."
+          action: "Check exporter container, DB listener, and DB instance status."
+          runbook_url: "https://runbooks.example.com/db/oracle-down"
+
+      - alert: MySQLDatabaseDown
+        expr: up{job="mysql_db"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: mysql
+          db_engine: mysql
+          environment: pilot
+          team: dba
+          owner: dba-team
+          category: availability
+        annotations:
+          summary: "MySQL exporter unreachable"
+          description: "{{ $labels.instance }} is unreachable for job mysql_db."
+          impact: "MySQL visibility and likely DB availability issue."
+          action: "Check exporter container, mysqld process, and DB network path."
+          runbook_url: "https://runbooks.example.com/db/mysql-down"

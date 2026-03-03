@@ -1,0 +1,38 @@
+groups:
+  - name: performance_alerts
+    rules:
+      - alert: MySQLConnectionsHigh
+        expr: (mysql_global_status_threads_connected / mysql_global_variables_max_connections) * 100 > 85
+        for: 10m
+        labels:
+          severity: warning
+          service: mysql
+          db_engine: mysql
+          environment: pilot
+          team: dba
+          owner: dba-team
+          category: performance
+        annotations:
+          summary: "MySQL connection utilization high"
+          description: "Connection usage is above 85% on {{ $labels.instance }}."
+          impact: "New client connections may be rejected during peaks."
+          action: "Check connection leaks, pooling, and max_connections sizing."
+          runbook_url: "https://runbooks.example.com/db/mysql-connections"
+
+      - alert: OracleActiveSessionsHigh
+        expr: oracledb_sessions_value{status="ACTIVE", type="USER"} > 100
+        for: 10m
+        labels:
+          severity: warning
+          service: oracle
+          db_engine: oracle
+          environment: pilot
+          team: dba
+          owner: dba-team
+          category: performance
+        annotations:
+          summary: "Oracle active sessions high"
+          description: "Active user sessions are {{ $value }} on {{ $labels.instance }}."
+          impact: "Sustained high concurrency can increase waits and response time."
+          action: "Inspect top sessions and expensive SQL workloads."
+          runbook_url: "https://runbooks.example.com/db/oracle-sessions"

@@ -6,14 +6,53 @@ request = '''
 SELECT
   username,
   account_status,
-  TO_CHAR(expiry_date, 'YYYY-MM-DD"T"HH24:MI:SS') as expiry_date,
+  TO_CHAR(expiry_date, 'YYYY-MM-DD"T"HH24:MI:SS') AS expiry_date,
   CASE
-    WHEN expiry_date IS NULL THEN NULL
+    WHEN expiry_date IS NULL THEN '99999'
     ELSE TO_CHAR(TRUNC(expiry_date - SYSDATE))
-  END as days_until_expiry,
-  1 as value
+  END AS days_until_expiry,
+  1 AS value
 FROM dba_users
 WHERE oracle_maintained = 'N'
 ORDER BY username
 '''
 
+[[metric]]
+context = "user_expiry_days"
+labels = ["username", "account_status"]
+metricsdesc = { value = "Days until Oracle user password expiry. 0 means expired." }
+request = '''
+SELECT
+  username,
+  account_status,
+  CASE
+    WHEN expiry_date IS NULL THEN 99999
+    WHEN expiry_date < SYSDATE THEN 0
+    ELSE TRUNC(expiry_date - SYSDATE)
+  END AS value
+FROM dba_users
+WHERE oracle_maintained = 'N'
+'''
+
+[[metric]]
+context = "tablespace_usage"
+labels = ["tablespace_name", "contents", "status"]
+metricsdesc = { value = "Oracle tablespace used percentage." }
+request = '''
+SELECT
+  tablespace_name,
+  contents,
+  status,
+  used_percent AS value
+FROM dba_tablespace_usage_metrics
+'''
+
+[[metric]]
+context = "alert_critical_count"
+metricsdesc = { value = "Critical Oracle alerts in DBA_OUTSTANDING_ALERTS." }
+request = '''
+SELECT
+  COUNT(*) AS value
+FROM dba_outstanding_alerts
+WHERE reason NOT LIKE '%threshold%' 
+'''

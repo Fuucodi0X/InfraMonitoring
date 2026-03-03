@@ -1,139 +1,109 @@
 global:
   resolve_timeout: 5m
-  smtp_smarthost: 'mailpit:1025'
-  smtp_from: 'alertmanager@example.com'
+  smtp_smarthost: "mailpit:1025"
+  smtp_from: "alertmanager@example.com"
   smtp_require_tls: false
 
-# Route tree - routes alerts based on labels
 route:
-  # Group alerts by service and severity to reduce noise
-  group_by: ['service', 'severity', 'alertname']
-  
-  # Wait 30s before sending first alert in a group (allows grouping)
+  receiver: default-email
+  group_by: ["environment", "service", "severity", "alertname"]
   group_wait: 30s
-  
-  # Wait 5m before sending updated alert group
   group_interval: 5m
-  
-  # Repeat interval varies by severity (alert fatigue prevention)
-  repeat_interval: 1h
-  
-  # Default receiver
-  receiver: 'default-email'
-  
-  # Child routes for different scenarios
+  repeat_interval: 2h
   routes:
-    # Critical alerts - immediate notification, shorter repeat
-    - match:
-        severity: critical
-      receiver: 'critical-alerts'
+    - matchers:
+        - severity="critical"
+        - category=~"availability|operational"
+      receiver: pager-webhook
       group_wait: 10s
       group_interval: 2m
       repeat_interval: 30m
-      continue: true  # Continue to check other routes
-    
-    # Warning alerts - longer intervals to prevent fatigue
-    - match:
-        severity: warning
-      receiver: 'warning-alerts'
+      continue: true
+
+    - matchers:
+        - severity="critical"
+      receiver: critical-email
+      group_wait: 10s
+      group_interval: 2m
+      repeat_interval: 30m
+
+    - matchers:
+        - severity="warning"
+      receiver: team-chat-webhook
       group_wait: 1m
       group_interval: 10m
       repeat_interval: 4h
       continue: true
-    
-    # Database-specific alerts
-    - match:
-        service: oracle
-      receiver: 'oracle-team'
-      group_by: ['alertname', 'instance']
-      continue: true
-    
-    - match:
-        service: mysql
-      receiver: 'mysql-team'
-      group_by: ['alertname', 'instance']
-      continue: true
-    
-    # Infrastructure alerts
-    - match:
-        service: infrastructure
-      receiver: 'infrastructure-team'
-      continue: true
 
-# Inhibition rules - suppress lower severity when critical exists
+    - matchers:
+        - severity="warning"
+      receiver: warning-email
+
+    - matchers:
+        - service="oracle"
+      receiver: oracle-team-email
+
+    - matchers:
+        - service="mysql"
+      receiver: mysql-team-email
+
 inhibit_rules:
-  # Suppress warning when critical exists for same service
-  - source_match:
-      severity: 'critical'
-    target_match:
-      severity: 'warning'
-    equal: ['service', 'instance']
-  
-  # Suppress elevated alerts when high alerts exist
-  - source_match:
-      alertname: 'HighCPUUsage'
-    target_match:
-      alertname: 'ElevatedCPUUsage'
-    equal: ['instance']
-  
-  - source_match:
-      alertname: 'HighMemoryUsage'
-    target_match:
-      alertname: 'ElevatedMemoryUsage'
-    equal: ['instance']
-  
-  - source_match:
-      alertname: 'OracleHighActiveSessions'
-    target_match:
-      alertname: 'OracleElevatedActiveSessions'
-    equal: ['instance']
-  
-  - source_match:
-      alertname: 'MySQLHighConnections'
-    target_match:
-      alertname: 'MySQLElevatedConnections'
-    equal: ['instance']
+  - source_matchers:
+      - severity="critical"
+    target_matchers:
+      - severity="warning"
+    equal: ["service", "instance", "environment"]
 
-# Receivers - different notification channels
+  - source_matchers:
+      - category="availability"
+      - severity="critical"
+    target_matchers:
+      - category=~"capacity|performance"
+      - severity=~"warning|critical"
+    equal: ["service", "instance", "environment"]
+
 receivers:
-  - name: 'default-email'
+  - name: default-email
     email_configs:
-      - to: 'admin@example.com'
+      - to: "admin@example.com"
         send_resolved: true
         headers:
-          Subject: '[Monitoring] Alert: {{ .GroupLabels.alertname }}'
-  
-  - name: 'critical-alerts'
+          Subject: "[Monitoring] {{ .CommonLabels.alertname }}"
+
+  - name: pager-webhook
+    webhook_configs:
+      - url: "http://alert-webhook:8080/pager"
+        send_resolved: true
+
+  - name: team-chat-webhook
+    webhook_configs:
+      - url: "http://alert-webhook:8080/team-chat"
+        send_resolved: true
+
+  - name: critical-email
     email_configs:
-      - to: 'dba-oncall@example.com'
+      - to: "dba-oncall@example.com"
         send_resolved: true
         headers:
-          Subject: '[CRITICAL] {{ .GroupLabels.alertname }} - {{ .GroupLabels.service }}'
-  
-  - name: 'warning-alerts'
+          Subject: "[CRITICAL] {{ .CommonLabels.alertname }}"
+
+  - name: warning-email
     email_configs:
-      - to: 'dba-team@example.com'
+      - to: "dba-team@example.com"
         send_resolved: true
         headers:
-          Subject: '[WARNING] {{ .GroupLabels.alertname }} - {{ .GroupLabels.service }}'
-  
-  - name: 'oracle-team'
+          Subject: "[WARNING] {{ .CommonLabels.alertname }}"
+
+  - name: oracle-team-email
     email_configs:
-      - to: 'oracle-dba@example.com'
+      - to: "oracle-dba@example.com"
         send_resolved: true
         headers:
-          Subject: '[Oracle] {{ .GroupLabels.alertname }}'
-  
-  - name: 'mysql-team'
+          Subject: "[Oracle] {{ .CommonLabels.alertname }}"
+
+  - name: mysql-team-email
     email_configs:
-      - to: 'mysql-dba@example.com'
+      - to: "mysql-dba@example.com"
         send_resolved: true
         headers:
-          Subject: '[MySQL] {{ .GroupLabels.alertname }}'
-  
-  - name: 'infrastructure-team'
-    email_configs:
-      - to: 'infra-team@example.com'
-        send_resolved: true
-        headers:
-          Subject: '[Infrastructure] {{ .GroupLabels.alertname }}'
+          Subject: "[MySQL] {{ .CommonLabels.alertname }}"
