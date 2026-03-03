@@ -12,6 +12,7 @@ This project provides a fully containerized environment that showcases how to bu
 *   **Efficiency**: Preventing alert fatigue through grouping and inhibition.
 *   **Education**: A safe sandbox to experiment with Prometheus and Alertmanager configurations.
 *   **Operations**: Daily DBA checks including user expiry, tablespace, listener, backup freshness, replication lag, and alert-log health.
+*   **Demoability**: Built-in simulation workflow to populate realistic dashboard activity data on demand.
 
 ## 🛠️ Technology Stack
 
@@ -20,7 +21,7 @@ This project provides a fully containerized environment that showcases how to bu
 *   **Testing**: [Mailpit](https://github.com/axllent/mailpit) (Local SMTP Server/UI)
 *   **Databases**: Oracle Free (slim) & MySQL 8.0
 *   **Exporters**: Node Exporter, MySQLD Exporter, OracleDB Exporter
-*   **Ops Collector**: `db_ops_exporter` for backup/replication/alert-log summary metrics
+*   **Ops Collector**: `db_ops_exporter` for backup/replication/alert-log plus MySQL user-expiry and tablespace summary metrics
 
 ## 🏗️ Smart Alerting Features
 
@@ -53,6 +54,12 @@ Trigger real-world failures to see the alerting logic in action:
 ./demo-scenarios.sh
 ```
 
+Populate activity data for the comprehensive DBA dashboard:
+```bash
+./simulate-dashboard-activity.sh 10
+```
+(`10` = minutes of live write simulation)
+
 ## 📂 Project Structure
 
 *   `docker-compose.yml`: Orchestrates the entire stack and network.
@@ -60,7 +67,29 @@ Trigger real-world failures to see the alerting logic in action:
 *   `alert_rules.yml`: The logic for CPU, Memory, Disk, and Database health alerts.
 *   `alertmanager.yml`: Routing trees, inhibition rules, and receiver configuration.
 *   `demo-scenarios.sh`: Interactive script to simulate infrastructure stress.
+*   `simulate-dashboard-activity.sh`: Seeds MySQL user/backup/tablespace activity for dashboard demos.
 *   `grafana/`: contains datasource and dashboard provisioning.
+
+## 📊 Dashboards
+
+Grafana includes:
+*   `Database Proactive Monitoring` (existing broad dashboard)
+*   `DBA Operations Comprehensive` (new day-to-day DBA dashboard)
+
+The new dashboard is focused on:
+*   User expiry and account health
+*   Backup freshness/status
+*   Replication lag/status
+*   Tablespace utilization
+*   Disk/host health
+*   DB server and listener status
+*   DB alert trends
+
+## 🔧 Oracle Exporter Compatibility Notes
+
+For Oracle Free images in this repo:
+*   Oracle exporter DSN uses `FREEPDB1` service.
+*   Custom tablespace metric query in `oracledb_exporter/custom-metrics.toml` uses only compatible columns from `dba_tablespace_usage_metrics`.
 
 ## 📖 Documentation
 For more detailed information, see:

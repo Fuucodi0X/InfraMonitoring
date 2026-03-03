@@ -24,6 +24,10 @@ docker compose ps
 - **Mailpit (email sink):** http://localhost:8025
 - **Alert webhook sink:** http://localhost:8080
 
+Grafana dashboards:
+- **DBA Operations Comprehensive:** `http://localhost:3000/d/dba-ops-comprehensive/dba-operations-comprehensive`
+- **Database Proactive Monitoring:** from the Infrastructure folder
+
 ## 5. Validate Configurations
 ```bash
 # Compose
@@ -54,7 +58,7 @@ curl -s http://localhost:9091/api/v1/alerts | jq '.data.alerts[] | {name: .label
 ### Stack
 - Prometheus + Alertmanager + Grafana
 - Oracle + MySQL exporters
-- db_ops_exporter for backup, replication, and alert-log summary metrics
+- db_ops_exporter for backup, replication, alert-log, MySQL user-expiry, and MySQL tablespace summary metrics
 - Node exporter for host metrics
 - Blackbox exporter for listener endpoint checks
 - Mailpit for demo email notifications
@@ -96,6 +100,25 @@ Use:
 ```
 
 Note: some script prompts still reference legacy alert names/credentials. The stack configuration and rule files are the source of truth.
+
+## Dashboard Activity Simulation
+Populate non-empty activity data for the new comprehensive dashboard:
+```bash
+./simulate-dashboard-activity.sh 10
+```
+
+What it does:
+- Rebuilds/restarts `db-ops-exporter` and `oracledb_exporter`
+- Seeds MySQL demo users (expired, expiring soon, locked)
+- Seeds MySQL backup history (`mysql.backup_history`)
+- Creates write workload in `demo_workload.events` to drive tablespace/activity charts
+
+Useful checks after simulation:
+```bash
+curl -s http://localhost:9091/api/v1/query --data-urlencode 'query=db_user_accounts_total{db_engine="mysql"}' | jq '.data.result | length'
+curl -s http://localhost:9091/api/v1/query --data-urlencode 'query=db_tablespace_used_percent{db_engine="mysql"}' | jq '.data.result | length'
+curl -s http://localhost:9091/api/v1/query --data-urlencode 'query=oracledb_user_expiry_days_value' | jq '.data.result | length'
+```
 
 ## Shutdown
 ```bash

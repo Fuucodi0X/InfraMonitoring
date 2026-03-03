@@ -22,6 +22,9 @@ docker compose ps
 - Mailpit: http://localhost:8025
 - Webhook sink: http://localhost:8080
 
+Recommended Grafana dashboard for this flow:
+- `DBA Operations Comprehensive` (`/d/dba-ops-comprehensive/dba-operations-comprehensive`)
+
 ### 3. Validate Config
 ```bash
 docker exec prometheus promtool check config /etc/prometheus/prometheus.yml
@@ -38,6 +41,18 @@ Show Prometheus targets page (`/targets`) and confirm these jobs are `UP`:
 - `listener_oracle`, `listener_mysql`
 
 Then show Alertmanager has no active alerts.
+
+### Part 1.5: Seed Dashboard Activity Data (2-3 minutes)
+Run:
+```bash
+./simulate-dashboard-activity.sh 10
+```
+
+Expected:
+- User-expiry and account-health panels become populated (MySQL + Oracle where available).
+- Backup freshness/status panels show non-zero values from seeded backup history.
+- Tablespace usage panels populate for MySQL and Oracle.
+- Activity trend charts show live movement during simulation runtime.
 
 ### Part 2: Availability Alert (3 minutes)
 Trigger DB-down by stopping MySQL exporter:
@@ -138,6 +153,7 @@ Call out how current PoC maps to daily DBA checks:
 - Backup freshness: `DatabaseBackupStaleWarning`, `DatabaseBackupStaleCritical` from `db_ops_exporter`.
 - Replication health: lag + thread/data guard alerts when replication is configured.
 - DB alert-log health: burst + critical event alerts from `db_ops_exporter`.
+- MySQL user-expiry and tablespace operational metrics are provided by `db_ops_exporter`.
 
 ## Useful Commands
 
@@ -174,6 +190,15 @@ curl -s http://localhost:9091/api/v1/query --data-urlencode 'query=db_backup_age
 3. Rules not loaded:
 - Confirm `prometheus.yml` points to `/etc/prometheus/rules/*.yml`
 - Re-run `promtool check config` and `check rules`
+
+4. Oracle panels empty in dashboard:
+- Confirm Oracle exporter DSN points to `FREEPDB1` in `docker-compose.yml`.
+- Check logs: `docker compose logs --tail=100 oracledb_exporter`
+- Confirm Oracle custom metrics load: `oracledb_user_expiry_days_value`, `oracledb_tablespace_usage_value`
+
+5. New dashboard panels show `No data`:
+- Run `./simulate-dashboard-activity.sh 10`
+- Wait one scrape interval (15-60s) and refresh Grafana
 
 ## Cleanup
 ```bash
