@@ -1,93 +1,103 @@
-# Quick Start - Alerting Demo
+# Quick Start - DBA Monitoring PoC
 
-## 1. Start the Stack
+## 1. Prepare Environment Variables
 ```bash
-docker-compose up -d
+cp .env.example .env
 ```
 
-## 2. Wait for Services (2-3 minutes)
-Check status:
+Update `.env` values before running in a shared environment.
+
+## 2. Start the Stack
 ```bash
-docker-compose ps
+docker compose up -d
 ```
 
-## 3. Access UIs
-- **Prometheus**: http://localhost:9091
-- **Alertmanager**: http://localhost:9093
-- **Mailpit** (Email): http://localhost:8025
-- **Grafana**: http://localhost:3000 (admin/admin123)
-
-## 4. Run Demo Scenarios
+## 3. Verify Services
 ```bash
-chmod +x demo-scenarios.sh
-./demo-scenarios.sh
+docker compose ps
 ```
 
-## 5. Validate Configurations (Optional)
-```bash
-# If docker-compose is available:
-docker-compose config
+## 4. Access UIs
+- **Grafana:** http://localhost:3000
+- **Prometheus:** http://localhost:9091
+- **Alertmanager:** http://localhost:9093
+- **Mailpit (email sink):** http://localhost:8025
+- **Alert webhook sink:** http://localhost:8080
 
-# Validate Prometheus config (after stack is running):
+## 5. Validate Configurations
+```bash
+# Compose
+docker compose config
+
+# Prometheus config + rules
 docker exec prometheus promtool check config /etc/prometheus/prometheus.yml
+docker exec prometheus promtool check rules /etc/prometheus/rules/*.yml
 
-# Validate Alertmanager config (after stack is running):
+# Alertmanager
 docker exec alertmanager amtool check-config /etc/alertmanager/alertmanager.yml
 ```
 
-## What Was Implemented
+## 6. Verify Monitoring Coverage
+```bash
+# Scrape targets
+curl -s http://localhost:9091/api/v1/targets | jq '.data.activeTargets[] | {job: .labels.job, health: .health}'
 
-### Alert Rules (`alert_rules.yml`)
-- ✅ Database down detection (Oracle & MySQL)
-- ✅ CPU usage alerts (Critical >85%, Warning >70%)
-- ✅ Memory usage alerts (Critical >90%, Warning >80%)
-- ✅ Oracle active sessions (Critical >100, Warning >75)
-- ✅ MySQL connections (Critical >80, Warning >60)
-- ✅ Query/Transaction rate alerts
-- ✅ Disk space alerts
+# Loaded alert rules
+curl -s http://localhost:9091/api/v1/rules | jq '.data.groups[].name'
 
-### Alertmanager (`alertmanager.yml`)
-- ✅ Severity-based routing (Critical vs Warning)
-- ✅ Service-based routing (Oracle, MySQL, Infrastructure)
-- ✅ Alert grouping to reduce email volume
-- ✅ Inhibition rules (suppress warnings when critical exists)
-- ✅ Different repeat intervals (Critical: 30m, Warning: 4h)
-- ✅ HTML email templates
+# Active alerts
+curl -s http://localhost:9091/api/v1/alerts | jq '.data.alerts[] | {name: .labels.alertname, state: .state}'
+```
 
-### Demo Script (`demo-scenarios.sh`)
-- ✅ Scenario 1: Database Down
-- ✅ Scenario 2: High CPU Usage
-- ✅ Scenario 3: High Memory Usage
-- ✅ Scenario 4: High MySQL Connections
-- ✅ Scenario 5: High Oracle Sessions (instructions)
-- ✅ Scenario 6: Test Alert Routing
-- ✅ Scenario 7: Demonstrate Alert Grouping
+## Implemented Architecture (Current)
 
-### Documentation
-- ✅ `DEMO_GUIDE.md` - Complete presentation guide
-- ✅ `QUICK_START.md` - This file
+### Stack
+- Prometheus + Alertmanager + Grafana
+- Oracle + MySQL exporters
+- Node exporter for host metrics
+- Blackbox exporter for listener endpoint checks
+- Mailpit for demo email notifications
+- Alert webhook sink for pager/chat route simulation
 
-## Key Features Demonstrated
+### Rule Packs
+- `rules/availability.yml`
+- `rules/operational.yml`
+- `rules/security.yml`
+- `rules/capacity.yml`
+- `rules/performance.yml`
 
-1. **Alert Fatigue Prevention**
-   - Grouping related alerts
-   - Different repeat intervals by severity
-   - Inhibition rules
+### Label and Alert Contract
+- Target labels include: `environment`, `team`, `owner`, `service`, `db_engine`, `db_role`
+- Alerts include: `severity`, `category`, `service`, `db_engine`, `team`, `owner`
+- Annotations include: `summary`, `description`, `impact`, `action`, `runbook_url`
 
-2. **Smart Routing**
-   - Critical alerts → immediate notification
-   - Warning alerts → delayed notification
-   - Service-specific teams
+### Key Alert Coverage
+- DB availability: `OracleDatabaseDown`, `MySQLDatabaseDown`
+- Listener health: `OracleListenerDown`, `MySQLListenerDown`
+- User expiry/security: `OracleUserPasswordExpired`, `OracleUserPasswordExpiryRisk`, `MySQLPasswordPolicyDisabled`
+- Capacity: CPU, memory, disk, Oracle tablespace high/critical
+- Performance: MySQL connection utilization, Oracle active sessions
 
-3. **Realistic Scenarios**
-   - Database availability
-   - Resource utilization
-   - Connection limits
-   - Performance metrics
+### Alert Routing
+- Critical availability/operational alerts -> `pager-webhook`
+- Warning alerts -> `team-chat-webhook`
+- Email receivers remain active for critical/warning and engine-specific fanout
+- Inhibition suppresses warning when matching critical is active
 
-## Next Steps
+## Demo Scenarios
+Use:
+```bash
+./demo-scenarios.sh
+```
 
-1. Review `DEMO_GUIDE.md` for detailed presentation flow
-2. Run `./demo-scenarios.sh` to test scenarios
-3. Customize email addresses in `alertmanager.yml` if needed
-4. Adjust alert thresholds in `alert_rules.yml` based on your environment
+Note: some script prompts still reference legacy alert names/credentials. The stack configuration and rule files are the source of truth.
+
+## Shutdown
+```bash
+docker compose down
+```
+
+To remove volumes too:
+```bash
+docker compose down -v
+```
