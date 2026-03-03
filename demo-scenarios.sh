@@ -241,7 +241,7 @@ main() {
     while true; do
         echo "=========================================="
         echo "Select a scenario to run:"
-        echo "1) Database Down (MySQL exporter)"
+        echo "1) Stop MySQL exporter (DatabaseDown alert)"
         echo "2) High CPU Usage"
         echo "3) High Memory Usage"
         echo "4) High MySQL Connections"
