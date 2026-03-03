@@ -181,7 +181,7 @@
                         "uid": "${DS_PROMETHEUS}"
                     },
                     "editorMode": "code",
-                    "expr": "# MySQL Replication Lag\nmysql_slave_status_seconds_behind_master{instance=~\"$instance.*\"}\nor\n# Oracle Data Guard Lag (if available)\noracledb_dataguard_lag_seconds{instance=~\"$instance.*\"}\nor\n# Fallback: Return 0 if no replication configured\nvector(0)",
+                    "expr": "max by (db_engine, instance) (db_replication_lag_seconds{instance=~\"$instance.*\"} * on(instance, service, db_engine, environment, team, owner) group_left db_replication_configured{instance=~\"$instance.*\"})",
                     "legendFormat": "Replication Lag",
                     "range": true,
                     "refId": "A"
@@ -195,7 +195,7 @@
                 "type": "prometheus",
                 "uid": "${DS_PROMETHEUS}"
             },
-            "description": "Time since last successful backup. Critical if > 24 hours",
+            "description": "Time since last successful backup from db_ops_exporter. Critical if > 24 hours",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -252,7 +252,7 @@
                         "uid": "${DS_PROMETHEUS}"
                     },
                     "editorMode": "code",
-                    "expr": "# Time since last backup (requires custom metric or RMAN exporter)\ntime() - (oracledb_backup_last_successful_timestamp{instance=~\"$instance.*\"} or mysql_backup_last_successful_timestamp{instance=~\"$instance.*\"} or vector(0))",
+                    "expr": "max by (db_engine, instance) (db_backup_age_seconds{instance=~\"$instance.*\"} * on(instance, service, db_engine, environment, team, owner) group_left db_backup_collection_supported{instance=~\"$instance.*\"})",
                     "legendFormat": "Hours Since Backup",
                     "range": true,
                     "refId": "A"

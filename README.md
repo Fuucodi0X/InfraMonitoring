@@ -11,6 +11,7 @@ This project provides a fully containerized environment that showcases how to bu
 *   **Precision**: Smart alerting thresholds that minimize false positives.
 *   **Efficiency**: Preventing alert fatigue through grouping and inhibition.
 *   **Education**: A safe sandbox to experiment with Prometheus and Alertmanager configurations.
+*   **Operations**: Daily DBA checks including user expiry, tablespace, listener, backup freshness, replication lag, and alert-log health.
 
 ## 🛠️ Technology Stack
 
@@ -19,6 +20,7 @@ This project provides a fully containerized environment that showcases how to bu
 *   **Testing**: [Mailpit](https://github.com/axllent/mailpit) (Local SMTP Server/UI)
 *   **Databases**: Oracle Free (slim) & MySQL 8.0
 *   **Exporters**: Node Exporter, MySQLD Exporter, OracleDB Exporter
+*   **Ops Collector**: `db_ops_exporter` for backup/replication/alert-log summary metrics
 
 ## 🏗️ Smart Alerting Features
 

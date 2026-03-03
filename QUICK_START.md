@@ -54,6 +54,7 @@ curl -s http://localhost:9091/api/v1/alerts | jq '.data.alerts[] | {name: .label
 ### Stack
 - Prometheus + Alertmanager + Grafana
 - Oracle + MySQL exporters
+- db_ops_exporter for backup, replication, and alert-log summary metrics
 - Node exporter for host metrics
 - Blackbox exporter for listener endpoint checks
 - Mailpit for demo email notifications
@@ -65,6 +66,7 @@ curl -s http://localhost:9091/api/v1/alerts | jq '.data.alerts[] | {name: .label
 - `rules/security.yml`
 - `rules/capacity.yml`
 - `rules/performance.yml`
+- `rules/backup_replication.yml`
 
 ### Label and Alert Contract
 - Target labels include: `environment`, `team`, `owner`, `service`, `db_engine`, `db_role`
@@ -77,6 +79,9 @@ curl -s http://localhost:9091/api/v1/alerts | jq '.data.alerts[] | {name: .label
 - User expiry/security: `OracleUserPasswordExpired`, `OracleUserPasswordExpiryRisk`, `MySQLPasswordPolicyDisabled`
 - Capacity: CPU, memory, disk, Oracle tablespace high/critical
 - Performance: MySQL connection utilization, Oracle active sessions
+- Backup freshness: `DatabaseBackupStaleWarning`, `DatabaseBackupStaleCritical`
+- Replication: `ReplicationLagWarning`, `ReplicationLagCritical`, `ReplicationThreadDownCritical`, `OracleDataGuardLagCritical`
+- DB alert logs: `DBAlertLogErrorBurstWarning`, `DBAlertLogCriticalEvents`
 
 ### Alert Routing
 - Critical availability/operational alerts -> `pager-webhook`

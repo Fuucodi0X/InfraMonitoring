@@ -135,6 +135,9 @@ Call out how current PoC maps to daily DBA checks:
 - Disk/server load: CPU, memory, disk alerts active.
 - DB alert status: Oracle outstanding alert counter monitored.
 - Listener status: Oracle/MySQL endpoint probes active.
+- Backup freshness: `DatabaseBackupStaleWarning`, `DatabaseBackupStaleCritical` from `db_ops_exporter`.
+- Replication health: lag + thread/data guard alerts when replication is configured.
+- DB alert-log health: burst + critical event alerts from `db_ops_exporter`.
 
 ## Useful Commands
 
@@ -151,6 +154,11 @@ curl -s http://localhost:9091/api/v1/rules | jq '.data.groups[] | {group: .name,
 Check listener probe metrics:
 ```bash
 curl -s http://localhost:9091/api/v1/query --data-urlencode 'query=probe_success{job=~"listener_.*"}' | jq
+```
+
+Check db_ops metrics:
+```bash
+curl -s http://localhost:9091/api/v1/query --data-urlencode 'query=db_backup_age_seconds or db_replication_lag_seconds or db_alertlog_error_count_15m' | jq
 ```
 
 ## Troubleshooting
