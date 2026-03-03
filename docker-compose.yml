@@ -5,12 +5,16 @@ services:
     ports:
       - "1521:1521"
     environment:
-      ORACLE_PASSWORD: demo123
+      ORACLE_PASSWORD: ${ORACLE_SYS_PASSWORD}
+      APP_USER: monitor
+      APP_USER_PASSWORD: ${ORACLE_MONITOR_PASSWORD}
     shm_size: 2g
     deploy:
       resources:
         limits:
           memory: 3g
+    volumes:
+      - ./oracle/init:/container-entrypoint-initdb.d:ro
 
   mysql:
     image: mysql:8.0
@@ -18,17 +22,22 @@ services:
     ports:
       - "3306:3306"
     environment:
-      MYSQL_ROOT_PASSWORD: demo123
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: monitor
+      MYSQL_USER: monitor
+      MYSQL_PASSWORD: ${MYSQL_MONITOR_PASSWORD}
     deploy:
       resources:
         limits:
           memory: 1g
+    volumes:
+      - ./mysql/init:/docker-entrypoint-initdb.d:ro
 
   oracledb_exporter:
     image: ghcr.io/iamseth/oracledb_exporter:latest
     container_name: oracle_exporter
     environment:
-      DATA_SOURCE_NAME: oracle://system:demo123@oracle-db:1521/FREE
+      DATA_SOURCE_NAME: oracle://monitor:${ORACLE_MONITOR_PASSWORD}@oracle-db:1521/FREE
       CUSTOM_METRICS: /custom-metrics.toml
     ports:
       - "9161:9161"
@@ -41,24 +50,24 @@ services:
     image: prom/mysqld-exporter:latest
     container_name: mysqld_exporter
     environment:
-      - MYSQLD_EXPORTER_PASSWORD=demo123
+      MYSQLD_EXPORTER_PASSWORD: ${MYSQL_MONITOR_PASSWORD}
     ports:
       - "9104:9104"
     command:
       - "--mysqld.address=mysql-db:3306"
-      - "--mysqld.username=root"
+      - "--mysqld.username=monitor"
     depends_on:
       - mysql
 
   node_exporter_oracle:
     image: prom/node-exporter:latest
     container_name: node_exporter_oracle
-    network_mode: "service:oracle" # Shares network/pid with oracle for accurate host metrics
+    network_mode: "service:oracle"
     pid: "service:oracle"
     volumes:
-      - /:/host:ro
+      - /:/host:ro,rslave
     command:
-      - '--path.rootfs=/host'
+      - "--path.rootfs=/host"
     depends_on:
       - oracle
 
@@ -68,18 +77,28 @@ services:
     network_mode: "service:mysql"
     pid: "service:mysql"
     volumes:
-      - /:/host:ro
+      - /:/host:ro,rslave
     command:
-      - '--path.rootfs=/host'
+      - "--path.rootfs=/host"
     depends_on:
       - mysql
+
+  blackbox_exporter:
+    image: prom/blackbox-exporter:latest
+    container_name: blackbox_exporter
+    ports:
+      - "9115:9115"
+    volumes:
+      - ./blackbox.yml:/etc/blackbox_exporter/config.yml:ro
+    command:
+      - "--config.file=/etc/blackbox_exporter/config.yml"
 
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
     volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
-      - ./alert_rules.yml:/etc/prometheus/alert_rules.yml
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./rules:/etc/prometheus/rules:ro
       - prometheus_data:/prometheus
     ports:
       - "9091:9090"
@@ -90,9 +109,15 @@ services:
     ports:
       - "9093:9093"
     volumes:
-      - ./alertmanager.yml:/etc/alertmanager/alertmanager.yml
+      - ./alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
     command:
-      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - "--config.file=/etc/alertmanager/alertmanager.yml"
+
+  alert-webhook:
+    image: mendhak/http-https-echo:37
+    container_name: alert_webhook
+    ports:
+      - "8080:8080"
 
   mailpit:
     image: axllent/mailpit
@@ -107,12 +132,14 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin123
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
+      MYSQL_GRAFANA_USER: ${MYSQL_GRAFANA_USER}
+      MYSQL_GRAFANA_PASSWORD: ${MYSQL_GRAFANA_PASSWORD}
     volumes:
       - grafana_data:/var/lib/grafana
-      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
-      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
-      - ./grafana/dashboards:/var/lib/grafana/dashboards
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
     depends_on:
       - prometheus
 

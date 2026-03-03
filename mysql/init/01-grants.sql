@@ -1,0 +1,3 @@
+GRANT PROCESS, REPLICATION CLIENT, SELECT ON *.* TO 'monitor'@'%';
+GRANT SELECT ON mysql.* TO 'monitor'@'%';
+FLUSH PRIVILEGES;
