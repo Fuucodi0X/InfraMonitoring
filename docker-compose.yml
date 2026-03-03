@@ -37,7 +37,7 @@ services:
     image: ghcr.io/iamseth/oracledb_exporter:latest
     container_name: oracle_exporter
     environment:
-      DATA_SOURCE_NAME: oracle://monitor:${ORACLE_MONITOR_PASSWORD}@oracle-db:1521/FREE
+      DATA_SOURCE_NAME: oracle://monitor:${ORACLE_MONITOR_PASSWORD}@oracle-db:1521/FREEPDB1
       CUSTOM_METRICS: /custom-metrics.toml
     ports:
       - "9161:9161"

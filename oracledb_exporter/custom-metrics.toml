@@ -36,13 +36,11 @@ WHERE oracle_maintained = 'N'
 
 [[metric]]
 context = "tablespace_usage"
-labels = ["tablespace_name", "contents", "status"]
+labels = ["tablespace_name"]
 metricsdesc = { value = "Oracle tablespace used percentage." }
 request = '''
 SELECT
   tablespace_name,
-  contents,
-  status,
   used_percent AS value
 FROM dba_tablespace_usage_metrics
 '''
