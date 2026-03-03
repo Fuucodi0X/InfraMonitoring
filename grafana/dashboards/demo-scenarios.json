@@ -123,7 +123,7 @@
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
           "editorMode": "code",
-          "expr": "mysql_up{job=\"${db}_db\"} or oracledb_up{job=\"${db}_db\"}",
+          "expr": "(max(mysql_up{job=\"${db}_db\"} or oracledb_up{job=\"${db}_db\"})) or max(up{job=\"${db}_db\"})",
           "instant": true,
           "legendFormat": "Database",
           "range": false,
