@@ -56,7 +56,7 @@ services:
     network_mode: "service:oracle" # Shares network/pid with oracle for accurate host metrics
     pid: "service:oracle"
     volumes:
-      - /:/host:ro,rslave
+      - /:/host:ro
     command:
       - '--path.rootfs=/host'
     depends_on:
@@ -68,7 +68,7 @@ services:
     network_mode: "service:mysql"
     pid: "service:mysql"
     volumes:
-      - /:/host:ro,rslave
+      - /:/host:ro
     command:
       - '--path.rootfs=/host'
     depends_on:
