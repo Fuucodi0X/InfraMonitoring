@@ -80,7 +80,7 @@ curl -s http://localhost:9091/api/v1/alerts | jq '.data.alerts[] | {name: .label
 ### Key Alert Coverage
 - DB availability: `OracleDatabaseDown`, `MySQLDatabaseDown`
 - Listener health: `OracleListenerDown`, `MySQLListenerDown`
-- User expiry/security: `OracleUserPasswordExpired`, `OracleUserPasswordExpiryRisk`, `MySQLPasswordPolicyDisabled`
+- User expiry/security: `OracleUserPasswordExpired`, `OracleUserPasswordExpiryRisk`, `MySQLUserPasswordExpired`, `MySQLUserPasswordExpiryRisk`, `MySQLPasswordPolicyDisabled`
 - Capacity: CPU, memory, disk, Oracle tablespace high/critical
 - Performance: MySQL connection utilization, Oracle active sessions
 - Backup freshness: `DatabaseBackupStaleWarning`, `DatabaseBackupStaleCritical`

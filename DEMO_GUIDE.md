@@ -54,6 +54,27 @@ Expected:
 - Tablespace usage panels populate for MySQL and Oracle.
 - Activity trend charts show live movement during simulation runtime.
 
+### Part 1.6: MySQL Password Expiry Alert Scenario (3 minutes)
+The seed script already creates demo accounts for this scenario:
+- `demo_expired` -> should trigger `MySQLUserPasswordExpired`
+- `demo_expiring_soon` (5 days) -> should trigger `MySQLUserPasswordExpiryRisk`
+
+Verify metrics immediately:
+```bash
+curl -s http://localhost:9091/api/v1/query --data-urlencode 'query=db_user_password_expiry_days{db_engine="mysql"}' | jq '.data.result[] | {user: .metric.username, status: .metric.account_status, days: .value[1]}'
+```
+
+Watch only password-expiry alerts:
+```bash
+curl -s http://localhost:9091/api/v1/alerts | jq '.data.alerts[] | select(.labels.alertname|test("MySQLUserPassword")) | {name:.labels.alertname, state:.state, user:.labels.username, severity:.labels.severity}'
+```
+
+Demo timing note:
+- `MySQLUserPasswordExpired` has `for: 15m`
+- `MySQLUserPasswordExpiryRisk` has `for: 30m`
+
+For live demos, run the seed step at least 30 minutes before speaking, or temporarily lower `for` values for demo-only speed.
+
 ### Part 2: Availability Alert (3 minutes)
 Trigger DB-down by stopping MySQL exporter:
 ```bash
@@ -145,7 +166,7 @@ Expected:
 
 ### Part 6: DBA Requirement Mapping (talk track)
 Call out how current PoC maps to daily DBA checks:
-- User expiry status: Oracle alerts implemented (`OracleUserPasswordExpired`, `OracleUserPasswordExpiryRisk`).
+- User expiry status: Oracle and MySQL alerts implemented (`OracleUserPasswordExpired`, `OracleUserPasswordExpiryRisk`, `MySQLUserPasswordExpired`, `MySQLUserPasswordExpiryRisk`).
 - Tablespace status: Oracle usage alerts implemented (`OracleTablespaceUsageHigh`, `OracleTablespaceUsageCritical`).
 - Disk/server load: CPU, memory, disk alerts active.
 - DB alert status: Oracle outstanding alert counter monitored.
