@@ -28,7 +28,7 @@ Recommended Grafana dashboard for this flow:
 ### 3. Validate Config
 ```bash
 docker exec prometheus promtool check config /etc/prometheus/prometheus.yml
-docker exec prometheus promtool check rules /etc/prometheus/rules/*.yml
+docker exec prometheus sh -c 'promtool check rules /etc/prometheus/rules/*.yml'
 docker exec alertmanager amtool check-config /etc/alertmanager/alertmanager.yml
 ```
 
